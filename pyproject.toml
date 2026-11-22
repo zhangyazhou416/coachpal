@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fitfuel"
+version = "0.1.0"
+description = "本地优先的健身与饮食记录工具：SQLite + CLI + 自包含网页看板"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+license = { text = "MIT" }
+
+[project.scripts]
+fitfuel = "fitfuel.cli:main"
+
+[tool.setuptools]
+packages = ["fitfuel"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

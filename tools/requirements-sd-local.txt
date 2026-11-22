@@ -1,0 +1,10 @@
+# 配合本地已下载的 torch wheel 使用（tools/gen_cartoon_images.py 的生成环境）
+# 用法：tools/.venv-sd/bin/pip install -i https://pypi.tuna.tsinghua.edu.cn/simple \
+#         /tmp/torch_dl/torch-2.15.0-cp312-cp312-manylinux_2_28_x86_64.whl \
+#         -r tools/requirements-sd-local.txt --resume-retries 15 --timeout 30
+torchvision
+diffusers>=0.31
+transformers>=4.44
+accelerate>=0.34
+safetensors
+pillow>=10
