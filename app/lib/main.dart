@@ -7,9 +7,9 @@ import 'core/data/asset_loader.dart';
 import 'core/repo/repository.dart';
 import 'core/theme/palette.dart';
 import 'features/body/body_page.dart';
+import 'features/chat/chat_page.dart';
 import 'features/meal/meal_page.dart';
 import 'features/profile/profile_page.dart';
-import 'features/today/today_page.dart';
 import 'features/trends/trends_page.dart';
 import 'features/workout/workout_page.dart';
 
@@ -51,14 +51,19 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = const [TodayPage(), RecordHubPage(), TrendsPage(), ProfilePage()];
+    final pages = const [
+      ChatPage(),
+      RecordHubPage(),
+      TrendsPage(),
+      ProfilePage(),
+    ];
     return Scaffold(
       body: pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.today_outlined), label: '今日'),
+          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: '教练'),
           NavigationDestination(icon: Icon(Icons.edit_note_outlined), label: '记录'),
           NavigationDestination(icon: Icon(Icons.trending_up_outlined), label: '趋势'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: '我的'),

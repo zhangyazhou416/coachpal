@@ -2,9 +2,14 @@
 library;
 
 import 'package:drift/drift.dart' hide Column;
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+
+import '../../core/settings.dart';
 
 import '../../core/db/connection.dart';
 import '../../core/db/database.dart';
@@ -164,6 +169,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const ServerSettingsCard(),
+                  const SizedBox(height: 12),
                   Text('记一笔体重', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   TextField(
@@ -187,6 +194,122 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 服务器设置区块（AI 对话与同步共用）。
+class ServerSettingsCard extends ConsumerStatefulWidget {
+  const ServerSettingsCard({super.key});
+
+  @override
+  ConsumerState<ServerSettingsCard> createState() => _ServerSettingsCardState();
+}
+
+class _ServerSettingsCardState extends ConsumerState<ServerSettingsCard> {
+  final _url = TextEditingController();
+  final _password = TextEditingController();
+  final _settings = AppSettings();
+  bool _connected = false;
+  bool _busy = false;
+  bool _loaded = false;
+
+  @override
+  void dispose() {
+    _url.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  void _snack(String msg) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<void> _login() async {
+    final url = _url.text.trim().replaceAll(RegExp(r'/+$'), '');
+    if (url.isEmpty) {
+      _snack('请填写服务器地址');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final r = await http.post(
+        Uri.parse('$url/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'password': _password.text}),
+      );
+      if (r.statusCode != 200) {
+        _snack('登录失败：HTTP ${r.statusCode}');
+        return;
+      }
+      final token = jsonDecode(r.body)['token'] as String;
+      await _settings.setServerUrl(url);
+      await _settings.setToken(token);
+      setState(() => _connected = true);
+      _snack('已连接服务器');
+    } catch (e) {
+      _snack('连接失败：$e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) {
+      _loaded = true;
+      _settings.serverUrl().then((v) {
+        if (mounted && v != null && _url.text.isEmpty) {
+          setState(() => _url.text = v);
+        }
+      });
+      _settings.isConfigured().then((v) {
+        if (mounted) setState(() => _connected = v);
+      });
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Text('同步服务', style: Theme.of(context).textTheme.titleMedium),
+              const Spacer(),
+              Icon(
+                _connected ? Icons.cloud_done : Icons.cloud_off,
+                size: 18,
+                color: _connected ? Colors.green : Colors.grey,
+              ),
+            ]),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _url,
+              decoration: const InputDecoration(
+                  labelText: '服务器地址',
+                  hintText: 'http://192.168.1.10:8321'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _password,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: '访问密码'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonal(
+              onPressed: _busy ? null : _login,
+              child: Text(_busy ? '连接中…' : '连接'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '连接后即可使用「教练」对话页完成所有记录；数据本地保存并同步到服务。',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }

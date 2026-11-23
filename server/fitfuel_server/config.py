@@ -1,7 +1,8 @@
-"""服务端配置：数据目录、端口、密码引导。"""
+"""服务端配置：数据目录、端口、密码引导、LLM 配置。"""
 
 from __future__ import annotations
 
+import json
 import os
 import secrets
 from pathlib import Path
@@ -54,3 +55,30 @@ def bootstrap_password() -> str:
     except OSError:
         pass
     return pw
+
+
+def llm_config() -> dict:
+    """LLM 配置：OpenAI 兼容接口。
+
+    优先级：环境变量 > server/data/llm_config.json。
+    键：base_url（如 https://dashscope.aliyuncs.com/compatible-mode/v1）、
+        api_key、model（如 qwen-plus / moonshot-v1-8k / deepseek-chat）。
+    """
+    cfg = {"base_url": None, "api_key": None, "model": None}
+    f = data_dir() / "llm_config.json"
+    if f.exists():
+        try:
+            cfg.update(json.loads(f.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError):
+            pass
+    env_map = {
+        "base_url": "FITFUEL_LLM_BASE_URL",
+        "api_key": "FITFUEL_LLM_API_KEY",
+        "model": "FITFUEL_LLM_MODEL",
+    }
+    for key, env in env_map.items():
+        v = os.environ.get(env)
+        if v:
+            cfg[key] = v
+    cfg["configured"] = bool(cfg.get("base_url") and cfg.get("api_key") and cfg.get("model"))
+    return cfg

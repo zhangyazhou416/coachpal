@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -45,7 +46,8 @@ from fitfuel.workouts import add_workout, delete_workout, list_workouts, workout
 
 from . import auth as auth_mod
 from . import stamp
-from .config import bootstrap_password, media_dir, port
+from .agent import run_agent
+from .config import bootstrap_password, llm_config, media_dir, port
 from .db import connect, stamp_missing, utcnow
 from .deps import get_con, require_token
 from .routers import sync as sync_router
@@ -437,6 +439,37 @@ def exercises_search(q: str = Query(...), limit: int = 15,
 @app.get("/api/exercises/show", dependencies=[guard])
 def exercises_show(q: str = Query(...), con: sqlite3.Connection = Depends(get_con)):
     return {"exercise": exercise_detail(con, q)}
+
+
+# ---------------------------------------------------------------- AI 对话
+
+
+class ChatTurn(BaseModel):
+    role: str
+    content: str
+
+
+class ChatBody(BaseModel):
+    message: str
+    history: list[ChatTurn] = []
+
+
+@app.post("/api/agent/chat", dependencies=[guard])
+def agent_chat(body: ChatBody, con: sqlite3.Connection = Depends(get_con)):
+    cfg = llm_config()
+    if not cfg.get("configured"):
+        raise HTTPException(
+            status_code=400,
+            detail="服务端未配置 LLM。设置 server/data/llm_config.json"
+                   "（base_url/api_key/model，OpenAI 兼容）或对应环境变量后重启。",
+        )
+    try:
+        return run_agent(
+            con, body.message,
+            history=[t.model_dump() for t in body.history],
+        )
+    except (httpx.HTTPError, RuntimeError) as exc:
+        raise HTTPException(status_code=502, detail=f"LLM 调用失败：{exc}") from exc
 
 
 # ---------------------------------------------------------------- 同步
