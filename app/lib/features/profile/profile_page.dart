@@ -15,10 +15,10 @@ import '../../core/db/connection.dart';
 import '../../core/db/database.dart';
 import '../../main.dart';
 
-final profileProvider = StreamProvider<ProfileData>((ref) {
+final profileProvider = StreamProvider<ProfileData?>((ref) {
   final db = ref.read(databaseProvider);
   return (db.select(db.profile)..where((p) => p.id.equals(1)))
-      .watchSingle();
+      .watchSingleOrNull();
 });
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -229,11 +229,9 @@ class _ServerSettingsCardState extends ConsumerState<ServerSettingsCard> {
   }
 
   Future<void> _login() async {
-    final url = _url.text.trim().replaceAll(RegExp(r'/+$'), '');
-    if (url.isEmpty) {
-      _snack('请填写服务器地址');
-      return;
-    }
+    final raw = _url.text.trim().replaceAll(RegExp(r'/+$'), '');
+    final url = raw.isEmpty ? 'http://127.0.0.1:8321' : raw;
+    _url.text = url;
     setState(() => _busy = true);
     try {
       final r = await http.post(

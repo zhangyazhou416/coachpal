@@ -209,5 +209,17 @@ class AppDatabase extends _$AppDatabase {
   int get schemaVersion => 1;
 
   @override
-  MigrationStrategy get migration => MigrationStrategy(onCreate: (m) => m.createAll());
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) async {
+          await m.createAll();
+        },
+        // 每次打开库都兜底：档案行缺失则补（OR IGNORE 不会覆盖已有数据）
+        beforeOpen: (details) async {
+          await customStatement(
+            "INSERT OR IGNORE INTO profile (id, sex, activity_level, goal_type, updated_at) "
+            "VALUES (1, 'male', 'moderate', 'maintain', ?)",
+            [DateTime.now().toUtc().toIso8601String()],
+          );
+        },
+      );
 }
