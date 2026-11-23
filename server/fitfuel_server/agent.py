@@ -52,8 +52,10 @@ SYSTEM_PROMPT = """你是 FitFuel，用户的私人健身与饮食记录助手�
 2. 食物匹配有歧义时（query_food 返回 ambiguous），把候选列给用户让 TA 选，不要擅自决定。
 3. 用户口述含糊（"吃了点米饭"）时按常见份量估算并在回复中注明估算假设。
 4. 查询类请求优先用 get_today / get_status / get_report。
-5. 回复用简体中文，简洁：先结论/数字，再一句要点；不要堆砌建议，不做医疗诊断。
-6. 单位：体重 kg，围度 cm，食物 g，热量 kcal。
+5. 动作教学类问题（"XX怎么练""XX正确姿势"）：先 search_exercises 找到动作，再 exercise_detail
+   拿步骤；App 会自动向用户展示该动作的动画演示，你只需用中文步骤要点回答（2-4 条关键点）。
+6. 回复用简体中文，简洁：先结论/数字，再一句要点；不要堆砌建议，不做医疗诊断。
+7. 单位：体重 kg，围度 cm，食物 g，热量 kcal。
 """
 
 # ---------------------------------------------------------------- 工具实现
@@ -323,6 +325,7 @@ def run_agent(con: sqlite3.Connection, message: str,
     messages.append({"role": "user", "content": message})
 
     actions: list[dict] = []
+    media: list[dict] = []
     reply = ""
     for _ in range(MAX_TOOL_ROUNDS):
         msg = call(cfg, messages)
@@ -345,6 +348,7 @@ def run_agent(con: sqlite3.Connection, message: str,
             try:
                 result = executor(name, args)
                 actions.append({"tool": name, "args": args, "ok": True})
+                media.extend(_extract_media(name, args, result))
             except FitFuelError as exc:
                 result = {"ok": False, "error": exc.message, "hints": exc.hints}
                 actions.append({"tool": name, "args": args, "ok": False,
@@ -361,4 +365,31 @@ def run_agent(con: sqlite3.Connection, message: str,
     else:
         reply = "这个请求有点复杂，我处理到一半超时了，请拆成几句话再说一次。"
 
-    return {"reply": reply or "（无回复）", "actions": actions}
+    return {"reply": reply or "（无回复）", "actions": actions, "media": media}
+
+
+def _extract_media(tool: str, args: dict, result: Any) -> list[dict]:
+    """从工具结果中确定性提取可展示的媒体（动画 GIF/缩略图）。"""
+    out: list[dict] = []
+    if tool in ("exercise_detail", "search_exercises") and isinstance(result, dict):
+        items = result.get("exercise") or result.get("exercises") or []
+        if isinstance(items, dict):
+            items = [items]
+        for ex in items[:1]:
+            name = ex.get("name") or ""
+            zh = ex.get("steps_zh") or []
+            gif = None
+            for img in ex.get("images") or []:
+                if isinstance(img, dict) and img.get("style") == "gif":
+                    gif = img.get("path")
+                    break
+            if not gif:
+                gif = ex.get("gif_path") or ""
+            if gif and "/videos/" in str(gif):
+                out.append({
+                    "type": "gif",
+                    "url": f"/media/videos/{str(gif).rsplit('/', 1)[1]}",
+                    "caption": name,
+                    "steps": (zh[:3] if isinstance(zh, list) else []),
+                })
+    return out

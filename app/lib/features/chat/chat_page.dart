@@ -10,13 +10,21 @@ import 'package:http/http.dart' as http;
 import '../../core/settings.dart';
 import '../../core/theme/palette.dart';
 
+class ChatMedia {
+  final String url; // 相对路径 /media/videos/xxx.gif
+  final String caption;
+  final List<String> steps;
+  const ChatMedia(this.url, this.caption, this.steps);
+}
+
 class ChatMessage {
   final String role; // user / assistant
   final String content;
   final List<String> actions; // 已执行动作（如 记录体重）
   final bool? actionOk;
+  final List<ChatMedia> media; // 动画演示等附件
   const ChatMessage(this.role, this.content,
-      {this.actions = const [], this.actionOk});
+      {this.actions = const [], this.actionOk, this.media = const []});
 }
 
 class ChatPage extends ConsumerStatefulWidget {
@@ -112,6 +120,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             return '${ok ? '✓' : '✗'} $name';
           })
           .toList();
+      final serverUrl = url;
+      final media = ((data['media'] as List?) ?? [])
+          .map((m) => ChatMedia(
+                '$serverUrl${m['url']}',
+                (m['caption'] as String?) ?? '',
+                ((m['steps'] as List?) ?? []).cast<String>(),
+              ))
+          .toList();
       setState(() {
         _messages.add(ChatMessage(
           'assistant',
@@ -119,6 +135,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           actions: actions,
           actionOk: actions.isNotEmpty &&
               actions.every((a) => a.startsWith('✓')),
+          media: media,
         ));
         _sending = false;
       });
@@ -256,6 +273,54 @@ class _Bubble extends StatelessWidget {
                     : theme.textTheme.bodyMedium?.color,
               ),
             ),
+            if (message.media.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final m in message.media)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          m.url,
+                          width: 220,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const SizedBox(
+                            width: 220,
+                            height: 80,
+                            child: Center(
+                                child: Text('动画加载失败',
+                                    style: TextStyle(
+                                        fontSize: 11, color: Colors.grey))),
+                          ),
+                          loadingBuilder: (_, child, progress) =>
+                              progress == null
+                                  ? child
+                                  : const SizedBox(
+                                      width: 220,
+                                      height: 80,
+                                      child: Center(
+                                          child: SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child:
+                                                  CircularProgressIndicator(
+                                                      strokeWidth: 2)))),
+                        ),
+                      ),
+                      if (m.steps.isNotEmpty)
+                        for (final st in m.steps)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text('· $st',
+                                style: const TextStyle(fontSize: 11)),
+                          ),
+                    ],
+                  ),
+                ),
+            ],
             if (message.actions.isNotEmpty) ...[
               const SizedBox(height: 6),
               Wrap(

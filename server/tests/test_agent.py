@@ -130,3 +130,26 @@ def test_agent_chat_endpoint_unconfigured(client, auth_headers):
     assert r.status_code in (200, 400)  # 取决于其他用例是否设置了环境变量
     if r.status_code == 400:
         assert "LLM" in r.json()["detail"]
+
+
+def test_agent_exercise_returns_media(client, auth_headers, monkeypatch):
+    """问动作 → exercise_detail → 回复应携带动画 GIF 的媒体附件。"""
+    from fitfuel_server import agent, config
+    from fitfuel_server.db import connect as server_connect
+
+    monkeypatch.setenv("FITFUEL_LLM_BASE_URL", "https://llm.example.com/v1")
+    monkeypatch.setenv("FITFUEL_LLM_API_KEY", "test")
+    monkeypatch.setenv("FITFUEL_LLM_MODEL", "test-model")
+
+    fake = FakeLLM([
+        tool_call("exercise_detail", '{"query": "卧推"}', call_id="call_m"),
+        {"role": "assistant", "content": "卧推要点：肩胛后收、杠铃轨迹落胸前。动画已展示。"},
+    ])
+    con = server_connect()
+    result = agent.run_agent(con, "卧推怎么练", llm_call=fake)
+    media = result.get("media") or []
+    assert media, "应携带动画媒体"
+    assert media[0]["url"].startswith("/media/videos/")
+    assert media[0]["url"].endswith(".gif")
+    assert media[0]["steps"], "应包含中文步骤要点"
+    con.close()
