@@ -2,10 +2,6 @@
 data/
 dashboard.html
 
-# 许可受限的数据集：仅限本机个人使用（见 vendor/SOURCES.md 与 README）
-# 注意：foods 数据与 exercises-dataset 的 GIF 媒体（© Gym visual）不要推到公开仓库
-vendor/foods/
-
 # 同步服务运行数据（含密码文件）
 server/data/
 
