@@ -22,6 +22,9 @@ venv/
 .vscode/
 .DS_Store
 
+# Claude Code 项目级个人配置（含 API key，不入库）
+.claude/settings.local.json
+
 # exercises-dataset 自带的浏览页（16MB，本项目不使用）
 vendor/exercises-dataset/index.html
 vendor/exercises-dataset/setup.html

@@ -1,0 +1,10 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://uni-api.cstcloud.cn",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "qwen3.5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "qwen3.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "qwen3.5",
+    "ANTHROPIC_MODEL": "qwen3.5"
+  },
+  "includeCoAuthoredBy": false
+}
