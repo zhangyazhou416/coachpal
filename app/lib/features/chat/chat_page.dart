@@ -1,4 +1,4 @@
-/// 主页：AI 对话框。自然语言完成记录与查询（服务端 Agent + fitfuel 工具集）。
+/// 主页：AI 对话框。自然语言完成记录与查询（服务端 Agent + coachpal 工具集）。
 library;
 
 import 'dart:convert';
@@ -41,7 +41,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final List<ChatMessage> _messages = [
     const ChatMessage(
         'assistant',
-        '你好！我是 FitFuel 教练 💪\n\n'
+        '你好！我是 CoachPal 教练 💪\n\n'
         '直接跟我说就行，比如：\n'
         '· 「今天体重 77.9，体脂 21.4」\n'
         '· 「午饭吃了 150g 鸡胸肉、200g 米饭」\n'

@@ -15,8 +15,8 @@ for p in (str(SERVER_DIR), str(ROOT)):
 @pytest.fixture(scope="session")
 def server_env(tmp_path_factory):
     data = tmp_path_factory.mktemp("server-data")
-    os.environ["FITFUEL_SERVER_DATA"] = str(data)
-    os.environ["FITFUEL_SERVER_PASSWORD"] = "test-pass-123"
+    os.environ["COACHPAL_SERVER_DATA"] = str(data)
+    os.environ["COACHPAL_SERVER_PASSWORD"] = "test-pass-123"
     yield {"data": data, "password": "test-pass-123"}
 
 
@@ -24,7 +24,7 @@ def server_env(tmp_path_factory):
 def client(server_env):
     from fastapi.testclient import TestClient
 
-    from fitfuel_server.main import app
+    from coachpal_server.main import app
 
     with TestClient(app) as c:
         yield c

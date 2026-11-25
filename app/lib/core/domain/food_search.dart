@@ -1,4 +1,4 @@
-/// 食物搜索评分：与 fitfuel.nutrition.search_foods 对齐。
+/// 食物搜索评分：与 coachpal.nutrition.search_foods 对齐。
 ///
 /// 相似度用 LCS 比近似 difflib ratio（排序效果一致，非逐字符等价）。
 library;

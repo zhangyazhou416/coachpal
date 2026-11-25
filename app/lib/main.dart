@@ -19,11 +19,11 @@ final repoProvider = Provider<Repo>((ref) => Repo(ref.read(databaseProvider)));
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: FitFuelApp()));
+  runApp(const ProviderScope(child: CoachPalApp()));
 }
 
-class FitFuelApp extends ConsumerWidget {
-  const FitFuelApp({super.key});
+class CoachPalApp extends ConsumerWidget {
+  const CoachPalApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +31,7 @@ class FitFuelApp extends ConsumerWidget {
     // 首次启动导入内置食物/动作资产（后台执行）
     AssetLoader(db).loadIfEmpty().catchError((_) {});
     return MaterialApp(
-      title: 'FitFuel',
+      title: 'CoachPal',
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       home: const HomePage(),

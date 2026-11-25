@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from fitfuel.nutrition import _find_food_dir, _load_gi, _norm_name  # noqa: E402
+from coachpal.nutrition import _find_food_dir, _load_gi, _norm_name  # noqa: E402
 
 OUT = ROOT / "app" / "assets" / "data"
 

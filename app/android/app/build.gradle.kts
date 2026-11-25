@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.fitfuel.fitfuel_app"
+    namespace = "com.coachpal.coachpal_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.fitfuel.fitfuel_app"
+        applicationId = "com.coachpal.coachpal_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

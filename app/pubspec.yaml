@@ -1,5 +1,5 @@
-name: fitfuel_app
-description: FitFuel 跨平台健身饮食记录（Android/iOS/Web/鸿蒙）
+name: coachpal_app
+description: CoachPal 跨平台健身饮食记录（Android/iOS/Web/鸿蒙）
 publish_to: "none"
 version: 0.1.0
 

@@ -1,4 +1,4 @@
-from fitfuel.strength import estimate_1rm, parse_set_spec, percentage_table
+from coachpal.strength import estimate_1rm, parse_set_spec, percentage_table
 
 
 def test_estimate_1rm_formulas():

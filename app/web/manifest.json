@@ -1,6 +1,6 @@
 {
-    "name": "fitfuel_app",
-    "short_name": "fitfuel_app",
+    "name": "coachpal_app",
+    "short_name": "coachpal_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

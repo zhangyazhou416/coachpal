@@ -1,4 +1,4 @@
-# FitFuel 跨平台架构方案（定稿）
+# CoachPal 跨平台架构方案（定稿）
 
 > 2026-11-22 确立。目标：Web + Android + iOS + 鸿蒙（HarmonyOS）四端，
 > Flutter 框架，本地优先 + 自建同步服务，全功能对齐现有 CLI 后上线。
@@ -21,7 +21,7 @@
            │ HTTPS (token)
 ┌──────────▼──────────────────────────────────┐
 │      server/ · FastAPI 同步服务（个人自部署）      │
-│  复用 fitfuel Python 包的全部领域计算             │
+│  复用 coachpal Python 包的全部领域计算             │
 │  SQLite + uuid/updated_at/墓碑，LWW 合并        │
 └─────────────────────────────────────────────┘
 ```
@@ -38,7 +38,7 @@
 ## 里程碑
 
 - **M0 架构与骨架**（本仓库已建）：monorepo 布局、同步协议定稿、server 骨架、app 数据层骨架
-- **M1 同步服务完整**：server/ 全部领域 API + 同步 pull/push + 测试（复用 fitfuel 包计算）
+- **M1 同步服务完整**：server/ 全部领域 API + 同步 pull/push + 测试（复用 coachpal 包计算）
 - **M2 App 数据层**：Drift 表结构、资产导入（食物/动作/缩略图）、Dart 领域计算全量移植 + 单测
 - **M3 App 全功能 UI**：今日/体重体脂/围度/目标/饮食/训练/趋势/复盘 8 组页面，对齐 CLI 功能
 - **M4 同步打通**：登录、pull/push、冲突 LWW、GIF 按需缓存
@@ -47,13 +47,13 @@
 ## 目录布局（monorepo）
 
 ```text
-fitfuel/
-├── fitfuel/          # Python 领域核心（现状保留；server 复用其计算）
+coachpal/
+├── coachpal/          # Python 领域核心（现状保留；server 复用其计算）
 ├── server/           # FastAPI 同步服务（M1）
-│   ├── fitfuel_server/
+│   ├── coachpal_server/
 │   │   ├── main.py       # FastAPI 入口 + 静态媒体路由（动作 GIF/缩略图）
 │   │   ├── config.py     # 数据目录/端口/密码引导
-│   │   ├── db.py         # 服务端库：fitfuel schema + 同步列（uuid/updated_at/deleted）
+│   │   ├── db.py         # 服务端库：coachpal schema + 同步列（uuid/updated_at/deleted）
 │   │   ├── auth.py       # 密码 → token（个人自部署，单主用户）
 │   │   ├── stamp.py      # uuid/updated_at 盖章 + 墓碑
 │   │   └── routers/      # auth/profile/body/goals/strength/foods/meals/workouts/reports/sync/exercises
@@ -63,7 +63,7 @@ fitfuel/
 │   ├── assets/data/      # 导出的食物/动作 JSON + 缩略图清单（tools/export_app_assets.py 生成）
 │   └── lib/
 │       ├── core/db/      # Drift 表 + DAO
-│       ├── core/domain/  # Dart 移植的计算（与 fitfuel.py 对拍单测）
+│       ├── core/domain/  # Dart 移植的计算（与 coachpal.py 对拍单测）
 │       ├── core/theme/   # 与网页看板一致的配色
 │       ├── features/     # today/weight/measure/goal/meal/workout/trends/report/profile
 │       └── sync/         # 同步客户端

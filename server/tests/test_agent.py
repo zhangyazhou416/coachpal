@@ -29,30 +29,30 @@ def tool_call(name, args_json, call_id="call_1"):
 
 
 def test_unconfigured_returns_hint(client, auth_headers, monkeypatch, server_env):
-    from fitfuel_server import agent, config
+    from coachpal_server import agent, config
 
     # 清掉 LLM 配置（测试环境的 data 目录没有 llm_config.json，也不设环境变量）
-    monkeypatch.delenv("FITFUEL_LLM_BASE_URL", raising=False)
-    monkeypatch.delenv("FITFUEL_LLM_API_KEY", raising=False)
-    monkeypatch.delenv("FITFUEL_LLM_MODEL", raising=False)
-    from fitfuel_server.db import connect as server_connect
+    monkeypatch.delenv("COACHPAL_LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("COACHPAL_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("COACHPAL_LLM_MODEL", raising=False)
+    from coachpal_server.db import connect as server_connect
     con = server_connect()
     cfg = config.llm_config()
     assert cfg["configured"] is False
     con.close()
     # run_agent 在未配置时返回提示而非异常
-    from fitfuel_server.db import connect as c2
+    from coachpal_server.db import connect as c2
     result = agent.run_agent(c2(), "你好")
     assert "llm_config.json" in result["reply"]
 
 
 def test_agent_records_weight_via_tool(client, auth_headers, monkeypatch, server_env):
-    from fitfuel_server import agent, config
-    from fitfuel_server.db import connect as server_connect
+    from coachpal_server import agent, config
+    from coachpal_server.db import connect as server_connect
 
-    monkeypatch.setenv("FITFUEL_LLM_BASE_URL", "https://llm.example.com/v1")
-    monkeypatch.setenv("FITFUEL_LLM_API_KEY", "test")
-    monkeypatch.setenv("FITFUEL_LLM_MODEL", "test-model")
+    monkeypatch.setenv("COACHPAL_LLM_BASE_URL", "https://llm.example.com/v1")
+    monkeypatch.setenv("COACHPAL_LLM_API_KEY", "test")
+    monkeypatch.setenv("COACHPAL_LLM_MODEL", "test-model")
 
     fake = FakeLLM([
         tool_call("record_weight", '{"weight": 77.9, "body_fat": 21.4}'),
@@ -74,18 +74,18 @@ def test_agent_records_weight_via_tool(client, auth_headers, monkeypatch, server
 
 def test_agent_ambiguity_flow(client, auth_headers, monkeypatch):
     """食物歧义：query_food 返回 ambiguous，LLM 应把候选转告用户。"""
-    from fitfuel_server import agent, config
+    from coachpal_server import agent, config
 
-    monkeypatch.setenv("FITFUEL_LLM_BASE_URL", "https://llm.example.com/v1")
-    monkeypatch.setenv("FITFUEL_LLM_API_KEY", "test")
-    monkeypatch.setenv("FITFUEL_LLM_MODEL", "test-model")
+    monkeypatch.setenv("COACHPAL_LLM_BASE_URL", "https://llm.example.com/v1")
+    monkeypatch.setenv("COACHPAL_LLM_API_KEY", "test")
+    monkeypatch.setenv("COACHPAL_LLM_MODEL", "test-model")
 
     fake = FakeLLM([
         tool_call("query_food", '{"query": "香蕉"}'),
         {"role": "assistant",
          "content": "香蕉有多个条目（红皮/甘蕉），你想记哪一种？"},
     ])
-    from fitfuel_server.db import connect as server_connect
+    from coachpal_server.db import connect as server_connect
     con = server_connect()
     result = agent.run_agent(con, "记一个香蕉", llm_call=fake)
     assert "香蕉" in result["reply"]
@@ -103,12 +103,12 @@ def test_agent_ambiguity_flow(client, auth_headers, monkeypatch):
 
 def test_agent_tool_error_surfaced(client, auth_headers, monkeypatch):
     """工具报错（如体重不合法）应作为工具结果回传给 LLM。"""
-    from fitfuel_server import agent, config
-    from fitfuel_server.db import connect as server_connect
+    from coachpal_server import agent, config
+    from coachpal_server.db import connect as server_connect
 
-    monkeypatch.setenv("FITFUEL_LLM_BASE_URL", "https://llm.example.com/v1")
-    monkeypatch.setenv("FITFUEL_LLM_API_KEY", "test")
-    monkeypatch.setenv("FITFUEL_LLM_MODEL", "test-model")
+    monkeypatch.setenv("COACHPAL_LLM_BASE_URL", "https://llm.example.com/v1")
+    monkeypatch.setenv("COACHPAL_LLM_API_KEY", "test")
+    monkeypatch.setenv("COACHPAL_LLM_MODEL", "test-model")
 
     fake = FakeLLM([
         tool_call("record_weight", '{"weight": 9999}', call_id="call_2"),
@@ -134,12 +134,12 @@ def test_agent_chat_endpoint_unconfigured(client, auth_headers):
 
 def test_agent_exercise_returns_media(client, auth_headers, monkeypatch):
     """问动作 → exercise_detail → 回复应携带动画 GIF 的媒体附件。"""
-    from fitfuel_server import agent, config
-    from fitfuel_server.db import connect as server_connect
+    from coachpal_server import agent, config
+    from coachpal_server.db import connect as server_connect
 
-    monkeypatch.setenv("FITFUEL_LLM_BASE_URL", "https://llm.example.com/v1")
-    monkeypatch.setenv("FITFUEL_LLM_API_KEY", "test")
-    monkeypatch.setenv("FITFUEL_LLM_MODEL", "test-model")
+    monkeypatch.setenv("COACHPAL_LLM_BASE_URL", "https://llm.example.com/v1")
+    monkeypatch.setenv("COACHPAL_LLM_API_KEY", "test")
+    monkeypatch.setenv("COACHPAL_LLM_MODEL", "test-model")
 
     fake = FakeLLM([
         tool_call("exercise_detail", '{"query": "卧推"}', call_id="call_m"),

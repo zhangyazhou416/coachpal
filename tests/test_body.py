@@ -1,4 +1,4 @@
-from fitfuel.body import (
+from coachpal.body import (
     add_goal,
     add_measurements,
     add_metric,
@@ -8,7 +8,7 @@ from fitfuel.body import (
     list_measurements,
     set_profile,
 )
-from fitfuel.db import connect
+from coachpal.db import connect
 
 
 def test_profile_and_bmi(tmp_path):

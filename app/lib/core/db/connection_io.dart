@@ -10,7 +10,7 @@ import 'database.dart';
 AppDatabase openDatabase() {
   return AppDatabase(LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'fitfuel.sqlite'));
+    final file = File(p.join(dir.path, 'coachpal.sqlite'));
     return NativeDatabase.createInBackground(file);
   }));
 }

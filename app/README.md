@@ -1,4 +1,4 @@
-# FitFuel App（Flutter）
+# CoachPal App（Flutter）
 
 Android / iOS / Web / 鸿蒙 四端应用。架构与里程碑见 `docs/CROSS_PLATFORM_PLAN.md`。
 
@@ -12,7 +12,7 @@ python3 tools/export_app_assets.py
 
 # 2. 生成平台工程目录（android/ios/web）
 cd app
-flutter create . --org com.fitfuel --platforms=android,ios,web --project-name fitfuel_app
+flutter create . --org com.coachpal --platforms=android,ios,web --project-name coachpal_app
 
 # 3. Drift 代码生成
 dart run build_runner build --delete-conflicting-outputs

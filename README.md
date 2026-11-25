@@ -1,4 +1,4 @@
-# FitFuel
+# CoachPal
 
 本地优先的健身与饮食记录工具：SQLite + CLI + 自包含网页看板。
 
@@ -12,42 +12,42 @@
 ## 快速开始
 
 ```bash
-cd /home/zhangyazhou/Desktop/fitness/fitfuel
+cd /home/zhangyazhou/Desktop/fitness/coachpal
 
 # 1. 初始化并导入食物库、动作库（默认读取同级的两个数据仓库）
-python3 -m fitfuel init
-python3 -m fitfuel seed
+python3 -m coachpal init
+python3 -m coachpal seed
 
 # 2. 建档
-python3 -m fitfuel profile set --sex male --height 178 --birth 1995-06-15 --activity moderate --goal cut
+python3 -m coachpal profile set --sex male --height 178 --birth 1995-06-15 --activity moderate --goal cut
 
 # 3. 记录
-python3 -m fitfuel weight add 77.9 --body-fat 21.4 --muscle 33.4
-python3 -m fitfuel measure add --chest 100 --waist 84 --hip 95 --arm 36
-python3 -m fitfuel goal set weight 72 --date 2027-03-01
-python3 -m fitfuel meal add --type 午餐 --item "鸡胸脯肉:150" --item "米饭（蒸，代表值）:200"
-python3 -m fitfuel strength add bench 80 5 --rpe 8
-python3 -m fitfuel workout add --name 推日 --set "卧推 80 5 @8" --set "高位下拉 60 10 @8"
+python3 -m coachpal weight add 77.9 --body-fat 21.4 --muscle 33.4
+python3 -m coachpal measure add --chest 100 --waist 84 --hip 95 --arm 36
+python3 -m coachpal goal set weight 72 --date 2027-03-01
+python3 -m coachpal meal add --type 午餐 --item "鸡胸脯肉:150" --item "米饭（蒸，代表值）:200"
+python3 -m coachpal strength add bench 80 5 --rpe 8
+python3 -m coachpal workout add --name 推日 --set "卧推 80 5 @8" --set "高位下拉 60 10 @8"
 
 # 4. 查看
-python3 -m fitfuel day
-python3 -m fitfuel status
-python3 -m fitfuel report --days 7
-python3 -m fitfuel dashboard --days 90
+python3 -m coachpal day
+python3 -m coachpal status
+python3 -m coachpal report --days 7
+python3 -m coachpal dashboard --days 90
 ```
 
 看板生成在 `data/dashboard.html`，直接双击即可打开。
 
 ## 作为 Claude Code Skill 使用
 
-Skill 源文件在 `skill/fitfuel/`。安装到项目或用户目录：
+Skill 源文件在 `skill/coachpal/`。安装到项目或用户目录：
 
 ```bash
-./install_skill.sh                 # 项目级：./.claude/skills/fitfuel
+./install_skill.sh                 # 项目级：./.claude/skills/coachpal
 ./install_skill.sh ~/.claude/skills # 用户级：所有项目可用
 ```
 
-如果当前环境不允许写入 `.claude/`，请手动执行上面的命令，或把 `skill/fitfuel/` 目录复制到 `.claude/skills/fitfuel`。
+如果当前环境不允许写入 `.claude/`，请手动执行上面的命令，或把 `skill/coachpal/` 目录复制到 `.claude/skills/coachpal`。
 
 安装后在项目里启动 Claude Code，可以直接说：
 
@@ -57,11 +57,11 @@ Skill 源文件在 `skill/fitfuel/`。安装到项目或用户目录：
 - "这周复盘一下"
 - "帮我看看今天的热量和蛋白质还差多少"
 
-Skill 会调用 `python3 -m fitfuel --json ...`，把结果整理后回复。所有数据仍在本地。
+Skill 会调用 `python3 -m coachpal --json ...`，把结果整理后回复。所有数据仍在本地。
 
 ## 数据来源
 
-所需数据已内嵌在 [vendor/](vendor/)，`fitfuel seed` 优先从这里读取，项目自包含。
+所需数据已内嵌在 [vendor/](vendor/)，`coachpal seed` 优先从这里读取，项目自包含。
 
 > **⚠️ 许可提示**：`vendor/foods/`（食物成分数据）与 `vendor/exercises-dataset/` 内的 GIF/图片媒体
 > （© [Gym visual](https://gymvisual.com/)）**仅限本机个人使用，请勿再分发或公开发布**；
@@ -80,24 +80,24 @@ Skill 会调用 `python3 -m fitfuel --json ...`，把结果整理后回复。所
 数据集在别处或想用更新版本时，可显式指定：
 
 ```bash
-python3 -m fitfuel seed --foods-dir /path/to/china-food-composition-data \
+python3 -m coachpal seed --foods-dir /path/to/china-food-composition-data \
                         --exercises-dir /path/to/free-exercise-db
 ```
 
 ## 常用命令
 
 ```bash
-python3 -m fitfuel --help
-python3 -m fitfuel <命令> --help
+python3 -m coachpal --help
+python3 -m coachpal <命令> --help
 ```
 
-完整命令与 JSON 字段见 `.claude/skills/fitfuel/references/commands.md`。
+完整命令与 JSON 字段见 `.claude/skills/coachpal/references/commands.md`。
 
 ## 项目结构
 
 ```text
-fitfuel/
-├── fitfuel/
+coachpal/
+├── coachpal/
 │   ├── cli.py          # 命令行入口
 │   ├── db.py           # SQLite 表结构
 │   ├── body.py         # 档案、体重体成分、围度、目标
@@ -109,7 +109,7 @@ fitfuel/
 │   ├── dashboard.py    # 自包含 HTML 看板
 │   └── paths.py        # 数据路径（vendor/ 优先）
 ├── vendor/             # 内嵌数据：食物成分 + GI + 动作库（见 SOURCES.md）
-├── skill/fitfuel/      # Claude Code skill 源（./install_skill.sh 安装）
+├── skill/coachpal/      # Claude Code skill 源（./install_skill.sh 安装）
 ├── tests/
 └── data/               # 运行时生成（已 gitignore）
 ```

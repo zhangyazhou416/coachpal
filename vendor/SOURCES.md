@@ -1,6 +1,6 @@
 # 数据来源与许可
 
-本目录内嵌了 fitfuel 运行所需的 minimal 数据子集，`fitfuel seed` 会优先从这里读取。
+本目录内嵌了 coachpal 运行所需的 minimal 数据子集，`coachpal seed` 会优先从这里读取。
 
 ## foods/ —— 中国食物成分数据
 

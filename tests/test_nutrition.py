@@ -1,8 +1,8 @@
 import pytest
 
-from fitfuel.body import add_metric, set_profile
-from fitfuel.db import connect
-from fitfuel.nutrition import (
+from coachpal.body import add_metric, set_profile
+from coachpal.db import connect
+from coachpal.nutrition import (
     add_meal,
     compute_targets,
     day_summary,

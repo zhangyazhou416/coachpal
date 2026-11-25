@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fitfuel"
+name = "coachpal"
 version = "0.1.0"
 description = "本地优先的健身与饮食记录工具：SQLite + CLI + 自包含网页看板"
 readme = "README.md"
@@ -12,10 +12,10 @@ dependencies = []
 license = { text = "MIT" }
 
 [project.scripts]
-fitfuel = "fitfuel.cli:main"
+coachpal = "coachpal.cli:main"
 
 [tool.setuptools]
-packages = ["fitfuel"]
+packages = ["coachpal"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

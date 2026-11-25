@@ -1,4 +1,4 @@
-# 本地卡通示意图生成环境（独立于 fitfuel 主依赖）
+# 本地卡通示意图生成环境（独立于 coachpal 主依赖）
 # 用法：tools/.venv-sd/bin/pip install -r tools/requirements-sd.txt
 --extra-index-url https://download.pytorch.org/whl/cu124
 torch>=2.4

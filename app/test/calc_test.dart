@@ -2,9 +2,9 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fitfuel_app/core/domain/calc.dart';
-import 'package:fitfuel_app/core/domain/food_search.dart';
-import 'package:fitfuel_app/core/domain/set_parser.dart';
+import 'package:coachpal_app/core/domain/calc.dart';
+import 'package:coachpal_app/core/domain/food_search.dart';
+import 'package:coachpal_app/core/domain/set_parser.dart';
 
 void main() {
   test('estimate1rm 与 Python 一致', () {

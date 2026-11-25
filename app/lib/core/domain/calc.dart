@@ -1,4 +1,4 @@
-/// 领域计算：与 fitfuel Python 包逐一对齐（对拍单测见 test/calc_test.dart）。
+/// 领域计算：与 coachpal Python 包逐一对齐（对拍单测见 test/calc_test.dart）。
 library;
 
 const activityFactors = {

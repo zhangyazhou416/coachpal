@@ -1,11 +1,11 @@
-from fitfuel.db import connect
-from fitfuel.exercises import (
+from coachpal.db import connect
+from coachpal.exercises import (
     exercise_detail,
     resolve_exercise,
     search_exercises,
     seed_exercises,
 )
-from fitfuel.workouts import add_workout
+from coachpal.workouts import add_workout
 
 
 def test_seed_from_dataset_and_resolve(tmp_path, exercise_dataset_dir):

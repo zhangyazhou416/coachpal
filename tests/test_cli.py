@@ -1,6 +1,6 @@
 import json
 
-from fitfuel.cli import main
+from coachpal.cli import main
 
 
 def run_json(capsys, db, *argv):
@@ -11,7 +11,7 @@ def run_json(capsys, db, *argv):
 
 
 def test_cli_end_to_end(tmp_path, capsys, foods_dir, exercises_dir):
-    db = tmp_path / "fitfuel.db"
+    db = tmp_path / "coachpal.db"
     code, data = run_json(
         capsys,
         db,
@@ -85,13 +85,13 @@ def test_cli_end_to_end(tmp_path, capsys, foods_dir, exercises_dir):
     html_path = tmp_path / "dashboard.html"
     assert html_path.exists()
     html = html_path.read_text(encoding="utf-8")
-    assert "fitfuel-data" in html
+    assert "coachpal-data" in html
     assert "__DATA_JSON__" not in html
     assert "体重趋势" in html
 
 
 def test_cli_error_is_json(tmp_path, capsys):
-    db = tmp_path / "fitfuel.db"
+    db = tmp_path / "coachpal.db"
     code, data = run_json(capsys, db, "food", "show", "不存在的食物")
     assert code == 2
     assert data["ok"] is False

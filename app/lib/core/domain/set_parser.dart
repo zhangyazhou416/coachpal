@@ -1,4 +1,4 @@
-/// 训练组解析与动作中文别名：与 fitfuel.strength 对齐。
+/// 训练组解析与动作中文别名：与 coachpal.strength 对齐。
 library;
 
 class ParsedSet {
@@ -26,7 +26,7 @@ ParsedSet? parseSetSpec(String spec) {
   );
 }
 
-/// 中文别名 → 英文搜索关键词（按顺序尝试）。与 fitfuel.exercises.ZH_ALIASES 对齐。
+/// 中文别名 → 英文搜索关键词（按顺序尝试）。与 coachpal.exercises.ZH_ALIASES 对齐。
 const zhAliases = <String, List<String>>{
   '卧推': ['barbell bench press', 'bench press'],
   '平板卧推': ['barbell bench press'],

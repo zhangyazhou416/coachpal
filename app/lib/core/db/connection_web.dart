@@ -8,7 +8,7 @@ import 'database.dart';
 AppDatabase openDatabase() {
   return AppDatabase(LazyDatabase(() async {
     final result = await WasmDatabase.open(
-      databaseName: 'fitfuel',
+      databaseName: 'coachpal',
       sqlite3Uri: Uri.parse('sqlite3.wasm'),
       driftWorkerUri: Uri.parse('drift_worker.js'),
     );

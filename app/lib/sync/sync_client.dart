@@ -11,7 +11,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class SyncConfig {
-  final String baseUrl; // 例如 https://fitfuel.example.com
+  final String baseUrl; // 例如 https://coachpal.example.com
   final String? token;
   const SyncConfig(this.baseUrl, {this.token});
 }
