@@ -32,6 +32,7 @@ node_modules/
 **/build/
 .hvigor/
 .hvigor-deps/
+.test/
 .cxx/
 local.properties
 *.hap

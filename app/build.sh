@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # 命令行构建 CoachPal 鸿蒙 HAP（无需打开 DevEco GUI）。
 # 用法：bash app/build.sh [hvigor 任务，默认 assembleHap]
+#   bash app/build.sh          # 构建产物 entry/build/default/outputs/default/*.hap
+#   bash app/build.sh test     # LocalUnit 单测（结果见 entry/.test/default/intermediates/test/coverage_data/test_result.txt）
 #
 # 说明：
 #   - hvigor 工具链全部来自本机 DevEco Studio 安装目录（下方 DEVECO 按需修改）。
