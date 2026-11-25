@@ -45,7 +45,6 @@ def sibling_data_dirs() -> dict[str, Path]:
     base = PROJECT_ROOT.parent
     return {
         "foods": base / "china-food-composition-data",
-        "exercises": base / "free-exercise-db",
         "gi": base
         / "china-food-composition-data"
         / "json_gi_of_foods"

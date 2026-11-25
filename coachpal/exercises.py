@@ -320,7 +320,7 @@ def search_exercises(con, query: str, limit: int = 15) -> list[dict[str, Any]]:
     if con.execute("SELECT COUNT(*) AS n FROM exercises").fetchone()["n"] == 0:
         raise CoachPalError(
             "动作库还是空的",
-            ["先运行：coachpal seed --exercises-dir ../free-exercise-db"],
+            ["先运行：coachpal seed --exercises-dir ../exercises-dataset"],
         )
     ql = q.lower()
     tokens = [t for t in ql.replace(",", " ").split() if t]

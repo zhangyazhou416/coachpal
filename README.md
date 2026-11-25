@@ -59,19 +59,22 @@ Skill 源文件在 `skill/coachpal/`。安装到项目或用户目录：
 
 Skill 会调用 `python3 -m coachpal --json ...`，把结果整理后回复。所有数据仍在本地。
 
-## 数据来源
+## 数据来源与致谢
 
-所需数据已内嵌在 [vendor/](vendor/)，`coachpal seed` 优先从这里读取，项目自包含。
+本项目使用了以下两个开源仓库的数据，特此说明与致谢：
 
-> **⚠️ 许可提示**：`vendor/foods/`（食物成分数据）与 `vendor/exercises-dataset/` 内的 GIF/图片媒体
-> （© [Gym visual](https://gymvisual.com/)）**仅限本机个人使用，请勿再分发或公开发布**；
-> exercises-dataset 的代码与数据文件为 MIT，媒体除外。详见 [vendor/SOURCES.md](vendor/SOURCES.md)。
+1. **[Sanotsu/china-food-composition-data](https://github.com/Sanotsu/china-food-composition-data)**
+   —— 中国食物成分数据，整理自《中国食物成分表标准版（第 6 版）》。
+   本项目取其 1677 条食物结构化数据与 GI（血糖指数）表，内嵌于 [`vendor/foods/`](vendor/foods/)。
+2. **[hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset)**
+   —— 动作库数据集，共 **1324 个动作**，每个带卡通动画 GIF、缩略图和 10 语言分步说明（中文全覆盖）。
+   整仓内嵌于 [`vendor/exercises-dataset/`](vendor/exercises-dataset/)。
 
-- `vendor/foods/` — 《中国食物成分表标准版（第 6 版）》结构化数据 1677 条 + GI 表
-  （来源 [Sanotsu/china-food-composition-data](https://github.com/Sanotsu/china-food-composition-data)）
-- `vendor/exercises-dataset/` — [exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset)
-  **1324 个动作**，每个带卡通动画 GIF、缩略图和 10 语言分步说明（中文全覆盖）。
-  数据 MIT，动画媒体 © Gym visual（仅限个人使用）
+数据已内嵌在 [vendor/](vendor/)，`coachpal seed` 优先从这里读取，项目自包含。
+
+> **⚠️ 许可提示**：食物成分数据原书为出版物，上游仓库未附开源许可；exercises-dataset 的
+> 代码与数据文件为 MIT，但动画媒体 © [Gym visual](https://gymvisual.com/)。
+> 因此 `vendor/` 内数据**仅限本机个人使用，请勿再分发或公开发布**。详见 [vendor/SOURCES.md](vendor/SOURCES.md)。
 
 动作库以 exercises-dataset 为唯一来源：`seed` 导入全部 1324 个动作（含 GIF 路径与中文步骤），
 并自动清理旧版 free-exercise-db 的遗留动作行（训练历史的动作名文本保留）。
@@ -81,7 +84,7 @@ Skill 会调用 `python3 -m coachpal --json ...`，把结果整理后回复。�
 
 ```bash
 python3 -m coachpal seed --foods-dir /path/to/china-food-composition-data \
-                        --exercises-dir /path/to/free-exercise-db
+                        --exercises-dir /path/to/exercises-dataset
 ```
 
 ## 常用命令
