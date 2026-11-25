@@ -1,9 +1,11 @@
 import { common } from '@kit.AbilityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Db } from './db/Db';
 import { ChangeBus } from './db/ChangeBus';
 import { Seed } from './db/Seed';
 import { Repo } from './repo/Repo';
 import { Settings } from './settings/Settings';
+import { SyncEngine } from './sync/SyncEngine';
 
 /** 全局服务单例：EntryAbility.onCreate 里 init（不阻塞），页面 await whenReady() 后取 db/repo。 */
 export class AppServices {
@@ -13,6 +15,7 @@ export class AppServices {
   readonly settings: Settings = new Settings();
   db: Db | null = null;
   repo: Repo | null = null;
+  sync: SyncEngine | null = null;
   private ctx: common.Context | null = null;
   private readyPromise: Promise<void> | null = null;
 
@@ -50,6 +53,8 @@ export class AppServices {
     this.db = db;
     const repo = new Repo(db, this.bus);
     this.repo = repo;
+    const sync = new SyncEngine(db, this.bus, this.settings);
+    this.sync = sync;
     await this.settings.init(ctx);
     // 参考数据后台导入，完成后清 repo 缓存；失败不阻塞应用
     new Seed(db, ctx, this.settings).run()
@@ -59,5 +64,18 @@ export class AppServices {
       .catch((e: Error): void => {
         console.error('[CoachPal] seed failed: ' + e.message);
       });
+    // 开启了自动同步则冷启动后台同步一轮（fire-and-forget）
+    this.settings.getAutoSync().then((on: boolean): void => {
+      if (on) {
+        sync.sync().then((r): void => {
+          if (!r.ok) {
+            hilog.warn(0x0000, 'CoachPal', '自动同步失败：' + (r.error ?? ''));
+          }
+        }).catch((e: Error): void => {
+          hilog.warn(0x0000, 'CoachPal', '自动同步异常：' + e.message);
+        });
+      }
+    }).catch((): void => {
+    });
   }
 }
