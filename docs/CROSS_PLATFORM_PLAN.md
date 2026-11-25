@@ -91,3 +91,20 @@ coachpal/
 - **Web**：Drift 用 wasm/sql.js 实现；GIF 与图表无障碍；CORS 在 server 配置
 - **iOS**：TestFlight 分发；健康数据不上 iCloud，仅自建同步
 - **安全**：全站 HTTPS（自部署用 Caddy 反代）；token 存安全存储（flutter_secure_storage）
+
+## 决策记录：2026-11 鸿蒙端改为原生 ArkTS（放弃 Flutter ohos 分支）
+
+原方案：Flutter（`flutter_flutter` OpenHarmony 分支）一套代码四端。实际执行中放弃：
+
+- **现状**：Flutter 端本身是半成品——`asset_loader.dart` 从未提交（编译不过）、
+  `exercises.json` 被根 `.gitignore` 的 `data/` 规则误吞、资产导入从未完成、同步从未接线
+- **决策**：删除 Flutter（android/ios/lib/web/test 与 pubspec 全部移除），仓库全面转为
+  鸿蒙原生（ArkTS/ArkUI，Stage 模型，bundleName `com.coachpal.app`），替换 `app/` 目录
+- **功能**：全功能对齐并修复 Flutter 端缺陷（骨骼肌保存、按日期 upsert 复用 uuid、
+  趋势图统一旧 → 新方向）；另补「立即同步」「启动自动同步」（冷启动后台同步）
+- **兼容红线**：本地 SQLite 12 表 schema 与 drift schema v1 逐列一致；
+  `updated_at` = UTC 秒无 Z；父子表 `meal_uuid`/`workout_uuid` 挂接；
+  本地软删、pull 墓碑硬删、双向 LWW —— 与服务端既有同步协议零改动对接
+- **单测**：Hypium LocalUnit 15 例（期望值与 Python/Flutter 对拍一致）；
+  领域计算三文件（calc/food_search/set_parser）禁止 import `@kit`
+- **构建**：`bash app/build.sh [test]`（DevEco 自带 node/hvigor/JBR，无 GUI 依赖）
