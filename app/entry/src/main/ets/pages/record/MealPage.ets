@@ -272,7 +272,7 @@ export struct MealPage {
               ForEach(this.pendingPortions, (p: FoodPortion, idx: number) => {
                 TagChip({
                   label: `${p.food.name} ${p.grams}g`,
-                  onDelete: (): void => {
+                  onRemove: (): void => {
                     this.removePortion(idx);
                   },
                 })
@@ -280,7 +280,7 @@ export struct MealPage {
               ForEach(this.pendingCustom, (c: CustomItemInput, idx: number) => {
                 TagChip({
                   label: `${c.name} ${c.grams}g`,
-                  onDelete: (): void => {
+                  onRemove: (): void => {
                     this.removeCustom(idx);
                   },
                 })

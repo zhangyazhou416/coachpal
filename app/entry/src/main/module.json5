@@ -6,6 +6,7 @@
     "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": ["phone", "tablet"],
+    "pages": "$profile:main_pages",
     "requestPermissions": [
       { "name": "ohos.permission.INTERNET" }
     ],

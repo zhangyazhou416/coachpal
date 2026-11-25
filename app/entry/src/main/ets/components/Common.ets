@@ -43,7 +43,7 @@ export struct SectionTitle {
 @ComponentV2
 export struct TagChip {
   @Param label: string = '';
-  onDelete: () => void = (): void => {
+  @Param onRemove: () => void = (): void => {
   };
 
   build() {
@@ -55,7 +55,7 @@ export struct TagChip {
         .fontSize(12)
         .fontColor($r('app.color.text_secondary'))
         .margin({ left: 6 })
-        .onClick((): void => this.onDelete())
+        .onClick((): void => this.onRemove())
     }
     .padding({ left: 10, right: 10, top: 6, bottom: 6 })
     .backgroundColor($r('app.color.divider'))

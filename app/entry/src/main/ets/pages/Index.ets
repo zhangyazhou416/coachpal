@@ -6,15 +6,15 @@ import { ProfilePage } from './ProfilePage';
 @Entry
 @ComponentV2
 struct Index {
-  @Local tabIndex: number = 0;
+  @Local currentTab: number = 0;
 
   @Builder
   tabBarItem(label: string, index: number) {
     Column() {
       Text(label)
         .fontSize(12)
-        .fontColor(this.tabIndex === index ? $r('app.color.primary') : $r('app.color.text_secondary'))
-        .fontWeight(this.tabIndex === index ? FontWeight.Medium : FontWeight.Normal)
+        .fontColor(this.currentTab === index ? $r('app.color.primary') : $r('app.color.text_secondary'))
+        .fontWeight(this.currentTab === index ? FontWeight.Medium : FontWeight.Normal)
     }
     .justifyContent(FlexAlign.Center)
     .width('100%')
@@ -23,7 +23,7 @@ struct Index {
 
   build() {
     Column() {
-      Tabs({ barPosition: BarPosition.End, index: this.tabIndex }) {
+      Tabs({ barPosition: BarPosition.End, index: this.currentTab }) {
         TabContent() {
           ChatPage()
         }.tabBar(this.tabBarItem('教练', 0))
@@ -43,7 +43,7 @@ struct Index {
       .scrollable(false)
       .barHeight(52)
       .onChange((index: number) => {
-        this.tabIndex = index;
+        this.currentTab = index;
       })
       .layoutWeight(1)
     }
