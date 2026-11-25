@@ -1,5 +1,5 @@
 # 本地数据库与生成的看板
-data/
+/data/
 dashboard.html
 
 # 同步服务运行数据（含密码文件）
@@ -25,3 +25,16 @@ venv/
 # exercises-dataset 自带的浏览页（16MB，本项目不使用）
 vendor/exercises-dataset/index.html
 vendor/exercises-dataset/setup.html
+
+# HarmonyOS / DevEco 构建产物与签名
+oh_modules/
+**/build/
+.hvigor/
+.cxx/
+local.properties
+*.hap
+*.hsp
+*.p12
+*.cer
+*.p7b
+oh-package-lock.json5
