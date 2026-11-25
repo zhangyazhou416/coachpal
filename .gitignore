@@ -28,8 +28,10 @@ vendor/exercises-dataset/setup.html
 
 # HarmonyOS / DevEco 构建产物与签名
 oh_modules/
+node_modules/
 **/build/
 .hvigor/
+.hvigor-deps/
 .cxx/
 local.properties
 *.hap
