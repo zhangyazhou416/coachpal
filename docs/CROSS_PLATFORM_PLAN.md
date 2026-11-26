@@ -107,4 +107,6 @@ coachpal/
   本地软删、pull 墓碑硬删、双向 LWW —— 与服务端既有同步协议零改动对接
 - **单测**：Hypium LocalUnit 15 例（期望值与 Python/Flutter 对拍一致）；
   领域计算三文件（calc/food_search/set_parser）禁止 import `@kit`
-- **构建**：`bash app/build.sh [test]`（DevEco 自带 node/hvigor/JBR，无 GUI 依赖）
+- **构建**：`bash build.sh [test]`（DevEco 自带 node/hvigor/JBR，无 GUI 依赖）
+- **后续决策（2026-11-26）**：鸿蒙工程从 `app/` 子目录上移到仓库根目录，DevEco 直接打开仓库根；
+  随后移除密码同步引擎（SyncEngine），改为华为账号 OAuth 登录 + App 内 AI 配置页

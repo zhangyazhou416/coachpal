@@ -2,9 +2,9 @@
 """导出鸿蒙 App 需要的参考数据资产。
 
 从 vendor/ 生成（写入 entry 模块 rawfile，随 HAP 打包）：
-  app/entry/src/main/resources/rawfile/foods.json       1677 条食物（精简字段）
-  app/entry/src/main/resources/rawfile/exercises.json   1324 个动作（含 gif/thumb 相对路径与中英文步骤）
-  app/entry/src/main/resources/rawfile/meta.json        版本号与统计
+  entry/src/main/resources/rawfile/foods.json       1677 条食物（精简字段）
+  entry/src/main/resources/rawfile/exercises.json   1324 个动作（含 gif/thumb 相对路径与中英文步骤）
+  entry/src/main/resources/rawfile/meta.json        版本号与统计
 缩略图不内置（12MB），App 首次同步时按需从服务器 /media 拉取并缓存。
 """
 
@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from coachpal.nutrition import _find_food_dir, _load_gi, _norm_name  # noqa: E402
 
-OUT = ROOT / "app" / "entry" / "src" / "main" / "resources" / "rawfile"
+OUT = ROOT / "entry" / "src" / "main" / "resources" / "rawfile"
 
 
 def export_foods() -> list[dict]:

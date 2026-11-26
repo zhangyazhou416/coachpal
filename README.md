@@ -1,6 +1,6 @@
 # CoachPal
 
-本地优先的健身与饮食记录工具：SQLite + CLI + 自包含网页看板。
+健身与饮食记录工具：**鸿蒙原生 App**（仓库根目录即 DevEco 工程）+ FastAPI 服务端（同步 / AI 教练）+ 本地 CLI + 自包含网页看板。
 
 - 记录身高、体重、体脂率、骨骼肌量、围度
 - 记录力量训练（自动估算 1RM）和每次训练的动作/组数/重量/次数
@@ -100,7 +100,10 @@ python3 -m coachpal <命令> --help
 
 ```text
 coachpal/
-├── coachpal/
+├── build.sh            # 鸿蒙 HAP 构建/单测（仓库根即 DevEco 工程）
+├── AppScope/ + entry/  # HarmonyOS 原生应用（ArkTS/ArkUI，见 docs/HARMONYOS.md）
+├── server/             # FastAPI 服务端：账号登录、数据同步、AI 教练
+├── coachpal/           # Python CLI
 │   ├── cli.py          # 命令行入口
 │   ├── db.py           # SQLite 表结构
 │   ├── body.py         # 档案、体重体成分、围度、目标
