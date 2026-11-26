@@ -1,5 +1,5 @@
-/// 行模型：与 drift schema v1 对齐的字段接口、条目类与 JSON 解码辅助。
-/// deleted 用 0/1 整数（drift 布尔在 SQLite 的存储形式），同步协议一致。
+/// 行模型：行字段接口、条目类与 JSON 解码辅助。
+/// deleted 用 0/1 整数（SQLite 布尔存储形式）。
 
 import { FoodHit } from '../domain/food_search';
 

@@ -1,4 +1,4 @@
-/// 本地 SQLite DDL：与 drift schema v1 逐列一致（同步兼容红线，勿改列名/类型）。
+/// 本地 SQLite DDL：12 张业务表 + 参考数据表（勿改列名/类型）。
 
 export const DDL_STATEMENTS: string[] = [
   `CREATE TABLE IF NOT EXISTS profile (

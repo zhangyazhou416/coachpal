@@ -250,7 +250,7 @@ export class Repo {
 
   // ------------------------------------------------------- 围度
 
-  /** 按 (date, site) upsert：复用已有 uuid，避免二级唯一索引冲突换主键破坏同步。 */
+  /** 按 (date, site) upsert：复用已有 uuid，避免二级唯一索引冲突换主键。 */
   async addMeasurements(date: string, inputs: MeasurementInput[]): Promise<void> {
     const now = nowUtc();
     await this.db.tx(async (): Promise<void> => {

@@ -1,5 +1,5 @@
-/// 时间工具：时间戳格式是同步生命线。
-/// updated_at 必须是 UTC、秒级、无时区后缀（与服务端 LWW 字符串比较兼容）。
+/// 时间工具。
+/// updated_at 统一为 UTC、秒级、无时区后缀（LWW 字符串比较兼容）。
 
 /** UTC 时间戳：2026-01-01T00:00:00（毫秒截断，无 Z）。 */
 export function nowUtc(): string {

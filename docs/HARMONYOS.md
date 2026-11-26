@@ -1,8 +1,7 @@
 # CoachPal App（鸿蒙原生 ArkTS/ArkUI）
 
-HarmonyOS 原生应用（Stage 模型，DevEco Studio），**工程就在仓库根目录**（DevEco 直接打开仓库根），
-对接 `server/` 的同一套 FastAPI。
-原 Flutter 客户端已删除；架构与同步协议见 `docs/CROSS_PLATFORM_PLAN.md`。
+HarmonyOS 原生应用（Stage 模型，DevEco Studio），**工程就在仓库根目录**（DevEco 直接打开仓库根）。
+无服务端依赖：数据全部本地（SQLite + rawfile），AI 由 App 直连模型接口。
 
 ## 工程结构
 
@@ -23,12 +22,12 @@ HarmonyOS 原生应用（Stage 模型，DevEco Studio），**工程就在仓库�
         │   │   ├── pages/AiConfigPage.ets          # AI 来源配置（华为端侧 / 自定义接口）
         │   │   ├── pages/ProfileEditPage.ets       # 档案编辑
         │   │   ├── pages/TrendsPage.ets            # 趋势 + 周复盘
-        │   │   ├── pages/ProfilePage.ets           # 华为账号登录 + 档案 + 快捷体重
+        │   │   ├── pages/ProfilePage.ets           # 档案 + 快捷体重
         │   │   ├── pages/record/RecordHub.ets      # 顶部三子页
         │   │   ├── pages/record/{Meal,Workout,Body}Page.ets
         │   │   ├── components/                     # Card/LineChart/对话框
         │   │   └── core/
-        │   │       ├── db/        # Ddl/Db/Seed/ChangeBus（SQLite，schema 与同步协议对齐）
+        │   │       ├── db/        # Ddl/Db/Seed/ChangeBus（SQLite，12 表）
         │   │       ├── repo/      # Model/Repo（业务写入唯一入口）
         │   │       ├── domain/    # calc/food_search/set_parser（纯逻辑，LocalUnit 可测）
         │   │       ├── net/Http.ets
@@ -69,30 +68,26 @@ hdc shell aa start -b com.coachpal.app -a EntryAbility
 hdc hilog | grep -i coachpal
 ```
 
-## 资产导出（食物/动作种子数据）
+## 资产数据（食物/动作种子）
 
-```bash
-python3 tools/export_app_assets.py   # 根目录执行 → entry/src/main/resources/rawfile/
-```
-
-`foods.json`（约 1677 条）、`exercises.json`（约 1324 条）、`meta.json`（导出时间）。
+`foods.json`（1677 条）、`exercises.json`（1324 个）内置 `entry/src/main/resources/rawfile/`，
 首启由 `Seed.ets` 幂等导入 SQLite（计数为 0 才导入）。
+动画 GIF（`rawfile/videos/` + `rawfile/images/`，约 123MB）同样在 rawfile 下，**不入库**，
+换机器时从上游 exercises-dataset 仓库拷贝。
 
-## 服务端与登录
+## AI 配置
 
-- 服务端：`server/`（FastAPI，默认端口 8321）：`uvicorn coachpal_server.main:app --host 0.0.0.0 --port 8321`
-  （须在仓库根目录运行，`PYTHONPATH=server`）
-- 登录：华为账号 OAuth（Authorization Code，服务端换 ID Token 取 UnionID，单用户绑定），
-  密码登录保留兜底（密码在 `server/data/server_password`）
-- AI 配置：App「AI 配置」页选择华为端侧模型或自定义 OpenAI 兼容接口（base_url/api_key/model），
-  经服务端 API 持久化到 `server/data/llm_config.json`（也可直接改该文件，环境变量优先）
-- 协议：8 张业务表 `uuid + updated_at(UTC 秒) + deleted` 墓碑、双向 LWW，
-  与服务端 `docs/CROSS_PLATFORM_PLAN.md` 定稿一致
+App「AI 配置」页（AiConfigPage）选择模型来源，App 直连接口、不经服务器：
+
+- **华为端侧模型**：设备端推理（需设备支持）
+- **自定义接口**：OpenAI 兼容网关（网关地址 / API Key / 模型名），如 `https://uni-api.cstcloud.cn` + `qwen3.5`
+
+教练页（ChatPage）把用户意图本地解析（`core/coach/`：动作查询、记体重、记训练等工具），
+再调 LLM 生成回复；动作示范 GIF 从本地 rawfile 播放。
 
 ## FAQ
 
-- **模拟器连不上本机服务器**：地址用 PC 局域网 IP（`ipconfig` 查看），不是 `127.0.0.1`；
-  Windows 防火墙需放行 8321 端口
 - **LocalUnit 单测**：`bash build.sh test`；领域计算三文件禁止 import `@kit`，否则无法在宿主 JS 引擎运行
-- **Actions GIF 加载失败**：GIF 由服务端 `/media/` 下发，确认服务器可达且已配置动作媒体
+- **动作 GIF 加载失败**：GIF 在本地 `rawfile/videos/`，确认目录存在且已装含资源的 HAP
+- **AI 对话报错**：检查「AI 配置」页的网关地址 / API Key / 模型名；自定义接口需为 OpenAI 兼容
 - **签名报错**：未配置签名；DevEco 自动签名生成一次即可（`*.p12/*.cer/*.p7b` 已 gitignore）
