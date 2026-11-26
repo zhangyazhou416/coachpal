@@ -379,16 +379,23 @@ def _extract_media(tool: str, args: dict, result: Any) -> list[dict]:
             name = ex.get("name") or ""
             zh = ex.get("steps_zh") or []
             gif = None
+            from_images = False
             for img in ex.get("images") or []:
                 if isinstance(img, dict) and img.get("style") == "gif":
-                    gif = img.get("path")
+                    # images 里 style=gif 的条目恒在 videos/ 下；relative 可能只有文件名
+                    gif = img.get("relative") or img.get("path")
+                    from_images = True
                     break
             if not gif:
                 gif = ex.get("gif_path") or ""
-            if gif and "/videos/" in str(gif):
+            # 路径可能是 Windows 反斜杠绝对路径，统一成正斜杠再判断/取文件名
+            norm = str(gif).replace("\\", "/")
+            ok = (from_images and norm) or \
+                 (norm and ("/videos/" in norm or norm.startswith("videos/")))
+            if ok:
                 out.append({
                     "type": "gif",
-                    "url": f"/media/videos/{str(gif).rsplit('/', 1)[1]}",
+                    "url": f"/media/videos/{norm.rsplit('/', 1)[-1]}",
                     "caption": name,
                     "steps": (zh[:3] if isinstance(zh, list) else []),
                 })
