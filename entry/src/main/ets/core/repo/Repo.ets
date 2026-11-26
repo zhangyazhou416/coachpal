@@ -580,6 +580,7 @@ export class Repo {
     const rows = await this.db.query(pred('exercises'));
     const mapped: ExerciseRow[] = rows.map((r: Row): ExerciseRow => mapExercise(r));
     this.exercisesCache = mapped;
+    console.info(`[CoachPal] allExercises rows=${mapped.length} first="${mapped.length > 0 ? mapped[0].name : ''}"`);
     return mapped;
   }
 

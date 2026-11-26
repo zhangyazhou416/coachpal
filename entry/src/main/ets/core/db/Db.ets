@@ -3,28 +3,31 @@ import { common } from '@kit.AbilityKit';
 import { DDL_STATEMENTS, PROFILE_FALLBACK_SQL } from './Ddl';
 import { nowUtc } from '../util/Time';
 
-/** 查询结果行的按名取值封装（列不存在或值为 NULL 返回 null）。 */
-export class Row {
-  private rs: relationalStore.ResultSet;
+type RowData = Record<string, string | number | null>;
 
-  constructor(rs: relationalStore.ResultSet) {
-    this.rs = rs;
+/** 查询结果行的按名取值封装（列不存在或值为 NULL 返回 null）。
+ *  持有的是迭代时快照的数据，而非 ResultSet——结果集关闭后仍可读。 */
+export class Row {
+  private data: RowData;
+
+  constructor(data: RowData) {
+    this.data = data;
   }
 
   str(name: string): string | null {
-    const i = this.rs.getColumnIndex(name);
-    if (i < 0 || this.rs.isColumnNull(i)) {
+    const v: string | number | null = this.data[name];
+    if (v === null || v === undefined) {
       return null;
     }
-    return this.rs.getString(i);
+    return typeof v === 'string' ? v : `${v}`;
   }
 
   num(name: string): number | null {
-    const i = this.rs.getColumnIndex(name);
-    if (i < 0 || this.rs.isColumnNull(i)) {
+    const v: string | number | null = this.data[name];
+    if (v === null || v === undefined) {
       return null;
     }
-    return this.rs.getDouble(i);
+    return typeof v === 'number' ? v : Number(v);
   }
 }
 
@@ -122,16 +125,44 @@ export class Db {
   }
 }
 
+let matLogged = false;
+
 function materialize(rs: relationalStore.ResultSet): Row[] {
   const out: Row[] = [];
   try {
+    const names: string[] = rs.columnNames;
+    const colCount = names.length;
+    if (!matLogged) {
+      matLogged = true;
+      console.info(`[CoachPal] rs colNames=${JSON.stringify(names)}`);
+      if (rs.goToFirstRow()) {
+        console.info(`[CoachPal] row0 col0="${rs.getString(0)}" colCount=${names.length}`);
+      }
+    }
     let ok = rs.goToFirstRow();
     while (ok) {
-      out.push(new Row(rs));
+      const data: RowData = {};
+      for (let i = 0; i < colCount; i++) {
+        // 部分模拟器镜像 isColumnNull 恒真，不能信——直接读，异常才算 NULL
+        data[names[i]] = readColumn(rs, i);
+      }
+      out.push(new Row(data));
       ok = rs.goToNextRow();
     }
   } finally {
     rs.close();
   }
   return out;
+}
+
+function readColumn(rs: relationalStore.ResultSet, i: number): string | number | null {
+  try {
+    return rs.getString(i);
+  } catch (e) {
+    try {
+      return rs.getDouble(i);
+    } catch (e2) {
+      return null;
+    }
+  }
 }

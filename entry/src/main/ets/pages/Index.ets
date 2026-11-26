@@ -1,12 +1,11 @@
+import { BodyHub } from './BodyHub';
 import { ChatPage } from './ChatPage';
-import { RecordHub } from './record/RecordHub';
-import { TrendsPage } from './TrendsPage';
 import { ProfilePage } from './ProfilePage';
 
 @Entry
 @ComponentV2
 struct Index {
-  @Local currentTab: number = 0;
+  @Local currentTab: number = 1;
   @Local hubVersion: number = 0;
 
   onPageShow(): void {
@@ -30,26 +29,22 @@ struct Index {
     Column() {
       Tabs({ barPosition: BarPosition.End, index: this.currentTab }) {
         TabContent() {
+          BodyHub()
+        }.tabBar(this.tabBarItem('身体', 0))
+
+        TabContent() {
           ChatPage()
-        }.tabBar(this.tabBarItem('教练', 0))
-
-        TabContent() {
-          RecordHub()
-        }.tabBar(this.tabBarItem('记录', 1))
-
-        TabContent() {
-          TrendsPage()
-        }.tabBar(this.tabBarItem('趋势', 2))
+        }.tabBar(this.tabBarItem('教练', 1))
 
         TabContent() {
           ProfilePage({ hubVersion: this.hubVersion })
-        }.tabBar(this.tabBarItem('我的', 3))
+        }.tabBar(this.tabBarItem('我的', 2))
       }
       .scrollable(false)
       .barHeight(52)
       .onChange((index: number) => {
         this.currentTab = index;
-        if (index === 3) {
+        if (index === 2) {
           this.hubVersion++;
         }
       })
