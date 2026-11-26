@@ -33,6 +33,7 @@ vendor/exercises-dataset/setup.html
 oh_modules/
 node_modules/
 **/build/
+.cache/
 .preview/
 .hvigor/
 .hvigor-deps/

@@ -5,10 +5,11 @@ export interface HttpResult {
   body: string;
 }
 
-/** POST JSON 封装：15s 超时、可选 Bearer。非 2xx 不抛错（按 status 分支），网络异常向上抛。 */
+/** HTTP 封装：可选 Bearer/额外头。非 2xx 不抛错（按 status 分支），网络异常向上抛。 */
 export class Http {
-  static async postJson(url: string, payload: object, token: string | null,
-    timeoutMs: number = 15000): Promise<HttpResult> {
+  private static async doRequest(method: http.RequestMethod, url: string,
+    payload: object | null, token: string | null, timeoutMs: number,
+    extraHeaders: Record<string, string> | null = null): Promise<HttpResult> {
     const client = http.createHttp();
     try {
       const header: Record<string, string> = {
@@ -17,10 +18,16 @@ export class Http {
       if (token !== null && token.length > 0) {
         header['Authorization'] = `Bearer ${token}`;
       }
+      if (extraHeaders !== null) {
+        const keys = Object.keys(extraHeaders);
+        for (const k of keys) {
+          header[k] = extraHeaders[k];
+        }
+      }
       const opts: http.HttpRequestOptions = {
-        method: http.RequestMethod.POST,
+        method: method,
         header: header,
-        extraData: JSON.stringify(payload),
+        extraData: payload === null ? undefined : JSON.stringify(payload),
         expectDataType: http.HttpDataType.STRING,
         connectTimeout: timeoutMs,
         readTimeout: timeoutMs,
@@ -32,5 +39,10 @@ export class Http {
     } finally {
       client.destroy();
     }
+  }
+
+  static async postJson(url: string, payload: object, token: string | null,
+    timeoutMs: number = 15000, extraHeaders: Record<string, string> | null = null): Promise<HttpResult> {
+    return Http.doRequest(http.RequestMethod.POST, url, payload, token, timeoutMs, extraHeaders);
   }
 }

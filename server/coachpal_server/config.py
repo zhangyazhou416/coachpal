@@ -57,12 +57,46 @@ def bootstrap_password() -> str:
     return pw
 
 
+def huawei_oauth_config() -> dict:
+    """华为账号 OAuth 配置（Account Kit 服务端换凭证用）。
+
+    优先级：环境变量 > server/data/huawei_oauth.json。
+    键：client_id、client_secret（AGC「项目设置 > 常规 > 应用」的
+    OAuth 2.0 客户端 ID / 密钥）。
+    """
+    cfg = {"client_id": None, "client_secret": None}
+    f = data_dir() / "huawei_oauth.json"
+    if f.exists():
+        try:
+            cfg.update(json.loads(f.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError):
+            pass
+    env_map = {
+        "client_id": "COACHPAL_HUAWEI_CLIENT_ID",
+        "client_secret": "COACHPAL_HUAWEI_CLIENT_SECRET",
+    }
+    for key, env in env_map.items():
+        v = os.environ.get(env)
+        if v:
+            cfg[key] = v
+    cfg["configured"] = bool(cfg.get("client_id") and cfg.get("client_secret"))
+    return cfg
+
+
+LLM_ENV_MAP = {
+    "base_url": "COACHPAL_LLM_BASE_URL",
+    "api_key": "COACHPAL_LLM_API_KEY",
+    "model": "COACHPAL_LLM_MODEL",
+}
+
+
 def llm_config() -> dict:
     """LLM 配置：OpenAI 兼容接口。
 
     优先级：环境变量 > server/data/llm_config.json。
     键：base_url（如 https://dashscope.aliyuncs.com/compatible-mode/v1）、
-        api_key、model（如 qwen-plus / moonshot-v1-8k / deepseek-chat）。
+        api_key、model（如 qwen-plus / moonshot-v1-8b / deepseek-chat）。
+    文件可经 /api/config/llm 接口修改，每次请求重新读取，保存即生效。
     """
     cfg = {"base_url": None, "api_key": None, "model": None}
     f = data_dir() / "llm_config.json"
@@ -71,14 +105,30 @@ def llm_config() -> dict:
             cfg.update(json.loads(f.read_text(encoding="utf-8")))
         except (json.JSONDecodeError, OSError):
             pass
-    env_map = {
-        "base_url": "COACHPAL_LLM_BASE_URL",
-        "api_key": "COACHPAL_LLM_API_KEY",
-        "model": "COACHPAL_LLM_MODEL",
-    }
-    for key, env in env_map.items():
+    for key, env in LLM_ENV_MAP.items():
         v = os.environ.get(env)
         if v:
             cfg[key] = v
     cfg["configured"] = bool(cfg.get("base_url") and cfg.get("api_key") and cfg.get("model"))
     return cfg
+
+
+def llm_env_overridden() -> bool:
+    """环境变量是否已覆盖文件配置（覆盖时接口保存不生效，用于客户端提示）。"""
+    return any(os.environ.get(env) for env in LLM_ENV_MAP.values())
+
+
+def save_llm_config(cfg: dict) -> None:
+    """合并写入 server/data/llm_config.json；空值保留原值。"""
+    f = data_dir() / "llm_config.json"
+    merged: dict = {}
+    if f.exists():
+        try:
+            merged.update(json.loads(f.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError):
+            pass
+    for key in LLM_ENV_MAP:
+        v = cfg.get(key)
+        if v:
+            merged[key] = v
+    f.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")

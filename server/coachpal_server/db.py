@@ -70,6 +70,10 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS tokens ("
         " token TEXT PRIMARY KEY, created_at TEXT NOT NULL)"
     )
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS huawei_account ("
+        " union_id TEXT PRIMARY KEY, display_name TEXT, bound_at TEXT NOT NULL)"
+    )
     # 与 coachpal.db.connect 一致：保证 profile id=1 行存在（set_profile 靠 UPDATE 它）
     con.execute(
         "INSERT OR IGNORE INTO profile (id, updated_at) VALUES (1, ?)", (utcnow(),)

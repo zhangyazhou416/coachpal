@@ -7,6 +7,11 @@ import { ProfilePage } from './ProfilePage';
 @ComponentV2
 struct Index {
   @Local currentTab: number = 0;
+  @Local hubVersion: number = 0;
+
+  onPageShow(): void {
+    this.hubVersion++;
+  }
 
   @Builder
   tabBarItem(label: string, index: number) {
@@ -37,13 +42,16 @@ struct Index {
         }.tabBar(this.tabBarItem('趋势', 2))
 
         TabContent() {
-          ProfilePage()
+          ProfilePage({ hubVersion: this.hubVersion })
         }.tabBar(this.tabBarItem('我的', 3))
       }
       .scrollable(false)
       .barHeight(52)
       .onChange((index: number) => {
         this.currentTab = index;
+        if (index === 3) {
+          this.hubVersion++;
+        }
       })
       .layoutWeight(1)
     }

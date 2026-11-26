@@ -3,7 +3,19 @@ import { asset } from '@kit.AssetStoreKit';
 import { util } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
 
-const TOKEN_ALIAS: string = 'coachpal_token';
+const KEY_ALIAS: string = 'coachpal_llm_key';
+
+/** AI 来源常量：device=华为端侧模型；custom=自定义接口。 */
+export class AiSource {
+  static readonly DEVICE: string = 'device';
+  static readonly CUSTOM: string = 'custom';
+}
+
+/** 自定义模型接口协议：openai=/chat/completions；anthropic=/v1/messages。 */
+export class LlmProtocol {
+  static readonly OPENAI: string = 'openai';
+  static readonly ANTHROPIC: string = 'anthropic';
+}
 
 function strToBytes(s: string): Uint8Array {
   return new util.TextEncoder().encodeInto(s);
@@ -13,13 +25,13 @@ function bytesToStr(b: Uint8Array): string {
   return util.TextDecoder.create('utf-8').decodeToString(b);
 }
 
-function tokenQuery(): asset.AssetMap {
+function keyQuery(): asset.AssetMap {
   const q: asset.AssetMap = new Map();
-  q.set(asset.Tag.ALIAS, strToBytes(TOKEN_ALIAS));
+  q.set(asset.Tag.ALIAS, strToBytes(KEY_ALIAS));
   return q;
 }
 
-/** 轻量设置（Preferences）；登录令牌存 AssetStoreKit（密钥库，非明文 Preferences）。 */
+/** 轻量设置（Preferences）；自定义模型的 API Key 存 AssetStoreKit（密钥库，非明文 Preferences）。 */
 export class Settings {
   private store: preferences.Preferences | null = null;
 
@@ -35,41 +47,54 @@ export class Settings {
     return this.store;
   }
 
-  async getServerUrl(): Promise<string> {
-    const v = await this.s().get('server_url', '');
+  // ------------------------------------------------------- AI 来源
+
+  async getAiSource(): Promise<string> {
+    const v = await this.s().get('ai_source', AiSource.DEVICE);
     return v as string;
   }
 
-  async setServerUrl(v: string): Promise<void> {
-    await this.s().put('server_url', v);
+  async setAiSource(v: string): Promise<void> {
+    await this.s().put('ai_source', v);
     await this.s().flush();
   }
 
-  async getAutoSync(): Promise<boolean> {
-    const v = await this.s().get('auto_sync', false);
-    return v as boolean;
-  }
+  // ------------------------------------------------------- 自定义模型（OpenAI 兼容）
 
-  async setAutoSync(v: boolean): Promise<void> {
-    await this.s().put('auto_sync', v);
-    await this.s().flush();
-  }
-
-  /** 资产导出版本（meta.exported_at），仅展示用。 */
-  async getAssetMeta(): Promise<string> {
-    const v = await this.s().get('asset_meta', '');
+  async getLlmBaseUrl(): Promise<string> {
+    const v = await this.s().get('llm_base_url', '');
     return v as string;
   }
 
-  async setAssetMeta(v: string): Promise<void> {
-    await this.s().put('asset_meta', v);
+  async setLlmBaseUrl(v: string): Promise<void> {
+    await this.s().put('llm_base_url', v);
     await this.s().flush();
   }
 
-  // ------------------------------------------------------- token（AssetStoreKit）
+  async getLlmModel(): Promise<string> {
+    const v = await this.s().get('llm_model', '');
+    return v as string;
+  }
 
-  async getToken(): Promise<string | null> {
-    const q = tokenQuery();
+  async setLlmModel(v: string): Promise<void> {
+    await this.s().put('llm_model', v);
+    await this.s().flush();
+  }
+
+  async getLlmProtocol(): Promise<string> {
+    const v = await this.s().get('llm_protocol', LlmProtocol.OPENAI);
+    return v as string;
+  }
+
+  async setLlmProtocol(v: string): Promise<void> {
+    await this.s().put('llm_protocol', v);
+    await this.s().flush();
+  }
+
+  // ------------------------------------------------------- API Key（AssetStoreKit）
+
+  async getLlmApiKey(): Promise<string | null> {
+    const q = keyQuery();
     q.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);
     try {
       const results: Array<asset.AssetMap> = await asset.query(q);
@@ -82,35 +107,43 @@ export class Settings {
       }
       return bytesToStr(secret);
     } catch (e) {
-      // 24000002 未找到视为未登录
+      // 24000002 未找到视为未配置
       return null;
     }
   }
 
   /** 覆盖写（CONFLICT_RESOLUTION.OVERWRITE 幂等）。 */
-  async saveToken(v: string): Promise<void> {
+  async saveLlmApiKey(v: string): Promise<void> {
     const m: asset.AssetMap = new Map();
-    m.set(asset.Tag.ALIAS, strToBytes(TOKEN_ALIAS));
+    m.set(asset.Tag.ALIAS, strToBytes(KEY_ALIAS));
     m.set(asset.Tag.SECRET, strToBytes(v));
     m.set(asset.Tag.CONFLICT_RESOLUTION, asset.ConflictResolution.OVERWRITE);
     await asset.add(m);
   }
 
-  async clearToken(): Promise<void> {
+  async clearLlmApiKey(): Promise<void> {
     try {
-      await asset.remove(tokenQuery());
+      await asset.remove(keyQuery());
     } catch (e) {
       // 不存在即已清除
     }
   }
 
-  /** 服务器地址与 token 齐备才算已配置。 */
-  async isConfigured(): Promise<boolean> {
-    const url = await this.getServerUrl();
+  /** AI 是否可用：端侧模型默认可用；自定义需接口地址/Key/模型名齐备。 */
+  async isAiConfigured(): Promise<boolean> {
+    const source = await this.getAiSource();
+    if (source === AiSource.DEVICE) {
+      return true;
+    }
+    const url = await this.getLlmBaseUrl();
     if (url.length === 0) {
       return false;
     }
-    const token = await this.getToken();
-    return token !== null && token.length > 0;
+    const model = await this.getLlmModel();
+    if (model.length === 0) {
+      return false;
+    }
+    const key = await this.getLlmApiKey();
+    return key !== null && key.length > 0;
   }
 }

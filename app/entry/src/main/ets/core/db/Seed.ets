@@ -2,7 +2,6 @@ import { util } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
 import { relationalStore } from '@kit.ArkData';
 import { Db } from './Db';
-import { Settings } from '../settings/Settings';
 
 interface FoodJson {
   code: string | null;
@@ -30,23 +29,14 @@ interface ExerciseJson {
   thumb: string | null;
 }
 
-interface MetaJson {
-  exported_at: string;
-  foods: number;
-  exercises: number;
-  protocol: number;
-}
-
 /** rawfile → foods/exercises 参考数据导入（空表才执行，幂等；后台跑不阻塞首帧）。 */
 export class Seed {
   private db: Db;
   private ctx: common.Context;
-  private settings: Settings;
 
-  constructor(db: Db, ctx: common.Context, settings: Settings) {
+  constructor(db: Db, ctx: common.Context) {
     this.db = db;
     this.ctx = ctx;
-    this.settings = settings;
   }
 
   async run(): Promise<void> {
@@ -59,7 +49,6 @@ export class Seed {
     if (exCount === 0) {
       await this.seedExercises();
     }
-    await this.seedMeta();
     console.info(`[CoachPal] seed done in ${Date.now() - t0} ms (foods=${foodCount}, exercises=${exCount})`);
   }
 
@@ -119,15 +108,5 @@ export class Seed {
     }
     await this.db.batchInsert('exercises', buckets);
     console.info(`[CoachPal] exercises seeded: ${buckets.length}`);
-  }
-
-  private async seedMeta(): Promise<void> {
-    try {
-      const text = await this.rawText('meta.json');
-      const meta = JSON.parse(text) as MetaJson;
-      await this.settings.setAssetMeta(meta.exported_at);
-    } catch (e) {
-      console.warn('[CoachPal] meta.json read failed: ' + (e as Error).message);
-    }
   }
 }

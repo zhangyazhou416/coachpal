@@ -47,7 +47,14 @@ from coachpal.workouts import add_workout, delete_workout, list_workouts, workou
 from . import auth as auth_mod
 from . import stamp
 from .agent import run_agent
-from .config import bootstrap_password, llm_config, media_dir, port
+from .config import (
+    bootstrap_password,
+    llm_config,
+    llm_env_overridden,
+    media_dir,
+    port,
+    save_llm_config,
+)
 from .db import connect, stamp_missing, utcnow
 from .deps import get_con, require_token
 from .routers import sync as sync_router
@@ -111,6 +118,23 @@ def login(body: LoginBody, con: sqlite3.Connection = Depends(get_con)):
     return {"ok": True, "token": token}
 
 
+class HuaweiLoginBody(BaseModel):
+    authorizationCode: str
+
+
+@app.post("/api/auth/huawei")
+def huawei_login(body: HuaweiLoginBody, con: sqlite3.Connection = Depends(get_con)):
+    try:
+        token, union_id = auth_mod.huawei_login(con, body.authorizationCode)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"华为账号服务不可达：{exc}") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return {"ok": True, "token": token, "union_id": union_id}
+
+
 @app.get("/api/meta", dependencies=[guard])
 def meta(con: sqlite3.Connection = Depends(get_con)):
     return {
@@ -127,6 +151,34 @@ def health():
 
 
 # ---------------------------------------------------------------- profile
+
+
+class LlmConfigBody(BaseModel):
+    base_url: str | None = None
+    api_key: str | None = None
+    model: str | None = None
+
+
+@app.get("/api/config/llm", dependencies=[guard])
+def get_llm_config():
+    cfg = llm_config()
+    return {
+        "base_url": cfg.get("base_url"),
+        "model": cfg.get("model"),
+        "api_key_set": bool(cfg.get("api_key")),
+        "configured": cfg.get("configured"),
+        "env_overridden": llm_env_overridden(),
+    }
+
+
+@app.put("/api/config/llm", dependencies=[guard])
+def update_llm_config(body: LlmConfigBody):
+    if not (body.base_url or body.api_key or body.model):
+        raise HTTPException(status_code=400, detail="没有需要保存的配置项")
+    save_llm_config(
+        {"base_url": body.base_url, "api_key": body.api_key, "model": body.model}
+    )
+    return {"ok": True}
 
 
 class ProfileBody(BaseModel):
