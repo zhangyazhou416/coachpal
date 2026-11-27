@@ -283,6 +283,11 @@ export class Repo {
 
   // ------------------------------------------------------- 目标
 
+  /** 参考数据表行数（foods/exercises 等，无 deleted 列的表）。 */
+  async countTable(table: string): Promise<number> {
+    return this.db.count(table);
+  }
+
   async listGoals(): Promise<GoalRow[]> {
     const p = pred('goals');
     p.equalTo('deleted', 0).orderByAsc('created_at');
