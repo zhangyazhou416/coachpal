@@ -40,37 +40,6 @@ struct Index {
     })
   }
 
-  /** 核心入口：教练（凸起渐变圆钮）。 */
-  @Builder
-  coachItem() {
-    Column({ space: 3 }) {
-      Column() {
-        Text('💪')
-          .fontSize(26)
-      }
-      .width(54)
-      .height(54)
-      .borderRadius(27)
-      .justifyContent(FlexAlign.Center)
-      .linearGradient({
-        angle: 135,
-        colors: [[$r('app.color.primary'), 0], [$r('app.color.accent'), 1]],
-      })
-      .shadow({ radius: 10, color: 'rgba(235,104,52,0.40)', offsetY: 3 })
-      Text('教练')
-        .fontSize(11)
-        .fontColor(this.currentTab === 1 ? $r('app.color.accent') : $r('app.color.text_secondary'))
-        .fontWeight(this.currentTab === 1 ? FontWeight.Bold : FontWeight.Normal)
-    }
-    .justifyContent(FlexAlign.Start)
-    .layoutWeight(1)
-    .height('100%')
-    .offset({ y: -12 })
-    .onClick((): void => {
-      this.switchTo(1);
-    })
-  }
-
   build() {
     Column() {
       Tabs({ barPosition: BarPosition.End, index: this.currentTab, controller: this.tabsController }) {
@@ -98,13 +67,13 @@ struct Index {
 
       Row() {
         this.navItem($r('sys.symbol.figure_walk'), '身体', 0)
-        this.coachItem()
+        this.navItem($r('sys.symbol.intelligent_coach'), '教练', 1)
         this.navItem($r('sys.symbol.person_crop_circle_fill'), '我的', 2)
       }
       .width('100%')
-      .height(72)
+      .height(64)
       .backgroundColor(Color.Transparent)
-      .alignItems(VerticalAlign.Top)
+      .alignItems(VerticalAlign.Center)
     }
     .backgroundColor($r('app.color.bg'))
     .width('100%')
