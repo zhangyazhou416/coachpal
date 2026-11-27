@@ -1,62 +1,37 @@
 import { AppServices } from '../core/services';
-import { todayIso } from '../core/util/Time';
-import { CardContainer, SectionTitle, parseNum } from '../components/Common';
+import { ProfileRow } from '../core/repo/Model';
+import { CardContainer } from '../components/Common';
 import { router } from '@kit.ArkUI';
 
-interface KindOption {
-  value: string;
-  label: string;
+const SEX_LABELS: Record<string, string> = {
+  'male': '男',
+  'female': '女',
+  'other': '其他',
+};
+const ACTIVITY_LABELS: Record<string, string> = {
+  'sedentary': '久坐',
+  'light': '轻度',
+  'moderate': '中等',
+  'active': '活跃',
+  'very_active': '非常活跃',
+};
+const GOAL_LABELS: Record<string, string> = {
+  'cut': '减脂',
+  'maintain': '维持',
+  'bulk': '增肌',
+};
+
+function mapLabel(m: Record<string, string>, v: string): string {
+  const r = m[v];
+  return r === undefined ? v : r;
 }
 
-const SEX_OPTIONS: KindOption[] = [
-  { value: 'male', label: '男' },
-  { value: 'female', label: '女' },
-  { value: 'other', label: '其他' },
-];
-const ACTIVITY_OPTIONS: KindOption[] = [
-  { value: 'sedentary', label: '久坐' },
-  { value: 'light', label: '轻度' },
-  { value: 'moderate', label: '中等' },
-  { value: 'active', label: '活跃' },
-  { value: 'very_active', label: '非常活跃' },
-];
-const GOAL_OPTIONS: KindOption[] = [
-  { value: 'cut', label: '减脂' },
-  { value: 'maintain', label: '维持' },
-  { value: 'bulk', label: '增肌' },
-];
-
-function toSelectOptions(opts: KindOption[]): SelectOption[] {
-  const out: SelectOption[] = [];
-  for (const o of opts) {
-    const s: SelectOption = { value: o.label };
-    out.push(s);
-  }
-  return out;
-}
-
-function indexOfValue(opts: KindOption[], v: string): number {
-  for (let i = 0; i < opts.length; i++) {
-    if (opts[i].value === v) {
-      return i;
-    }
-  }
-  return 0;
-}
-
-/// 个人档案页：性别/身高/活动水平/目标 + 快捷记体重。
+/// 个人档案页（纯展示）：只读显示档案；修改通过教练对话完成。
 @Entry
 @ComponentV2
 struct ProfileEditPage {
-  @Local sexIndex: number = 0;
-  @Local heightText: string = '';
-  @Local activityIndex: number = 2;
-  @Local goalIndex: number = 0;
-  @Local weightText: string = '';
-  @Local bodyFatText: string = '';
-  private sexOpts: SelectOption[] = toSelectOptions(SEX_OPTIONS);
-  private activityOpts: SelectOption[] = toSelectOptions(ACTIVITY_OPTIONS);
-  private goalOpts: SelectOption[] = toSelectOptions(GOAL_OPTIONS);
+  @Local profile: ProfileRow | null = null;
+  @Local loaded: boolean = false;
 
   aboutToAppear(): void {
     this.init();
@@ -65,51 +40,27 @@ struct ProfileEditPage {
   private async init(): Promise<void> {
     const svc = AppServices.getInstance();
     await svc.whenReady();
-    const repo = svc.repo;
-    if (repo !== null) {
-      const p = await repo.getProfile();
-      if (p !== null) {
-        this.sexIndex = indexOfValue(SEX_OPTIONS, p.sex);
-        this.activityIndex = indexOfValue(ACTIVITY_OPTIONS, p.activityLevel);
-        this.goalIndex = indexOfValue(GOAL_OPTIONS, p.goalType);
-        if (p.heightCm !== null) {
-          this.heightText = String(p.heightCm);
-        }
-      }
+    if (svc.repo !== null) {
+      this.profile = await svc.repo.getProfile();
     }
+    this.loaded = true;
   }
 
-  private toast(msg: string): void {
-    this.getUIContext().getPromptAction().showToast({ message: msg, duration: 2000 });
-  }
-
-  private async saveProfile(): Promise<void> {
-    const repo = AppServices.getInstance().repo;
-    if (repo === null) {
-      return;
+  private ageFromBirth(birth: string | null): string {
+    if (birth === null || birth.length < 10) {
+      return '—';
     }
-    const h = parseNum(this.heightText);
-    await repo.saveProfile(SEX_OPTIONS[this.sexIndex].value, h,
-      ACTIVITY_OPTIONS[this.activityIndex].value, GOAL_OPTIONS[this.goalIndex].value);
-    this.toast('档案已保存');
-  }
-
-  private async addWeight(): Promise<void> {
-    const repo = AppServices.getInstance().repo;
-    if (repo === null) {
-      return;
+    const y = Number(birth.substring(0, 4));
+    const m = Number(birth.substring(5, 7));
+    if (Number.isNaN(y) || Number.isNaN(m)) {
+      return '—';
     }
-    const w = parseNum(this.weightText);
-    if (w === null || w < 20 || w > 400) {
-      this.toast('体重不合理（20-400 kg）');
-      return;
+    const now = new Date();
+    let age = now.getFullYear() - y;
+    if (now.getMonth() + 1 < m) {
+      age--;
     }
-    const bf = parseNum(this.bodyFatText);
-    await repo.addWeight(w, bf);
-    const date = todayIso();
-    this.weightText = '';
-    this.bodyFatText = '';
-    this.toast(`已记录 ${date} 体重 ${w} kg`);
+    return `${age} 岁`;
   }
 
   @Builder
@@ -131,112 +82,67 @@ struct ProfileEditPage {
     .alignItems(VerticalAlign.Center)
   }
 
+  @Builder
+  infoRow(label: string, value: string) {
+    Row() {
+      Text(label)
+        .fontSize(14)
+        .fontColor($r('app.color.text_secondary'))
+      Blank()
+      Text(value)
+        .fontSize(15)
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.text_primary'))
+    }
+    .width('100%')
+    .padding({ top: 8, bottom: 8 })
+  }
+
   build() {
     Scroll() {
       Column({ space: 12 }) {
         this.titleBar('个人档案')
 
-        // 档案
-        CardContainer() {
-          Column({ space: 12 }) {
-            SectionTitle({ text: '基础档案' })
-            Row({ space: 12 }) {
-              Text('性别')
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .width(72)
-              Select(this.sexOpts)
-                .selected(this.sexIndex)
-                .value(this.sexOpts[this.sexIndex].value)
+        if (this.loaded && this.profile === null) {
+          CardContainer() {
+            Column({ space: 10 }) {
+              Text('还没有档案')
+                .fontSize(16)
+                .fontWeight(FontWeight.Bold)
                 .fontColor($r('app.color.text_primary'))
-                .layoutWeight(1)
-                .onSelect((idx: number): void => {
-                  this.sexIndex = idx;
-                })
-            }
-            .width('100%')
-            Row({ space: 12 }) {
-              Text('身高 cm')
-                .fontSize(14)
+              Text('直接跟教练说一句即可建档，例如：\n「我男，31 岁，178cm，中等活动量，目标减脂」')
+                .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
-                .width(72)
-              TextInput({ text: this.heightText, placeholder: '178' })
-                .type(InputType.NUMBER_DECIMAL)
-                .layoutWeight(1)
-                .onChange((v: string): void => {
-                  this.heightText = v;
-                })
             }
+            .alignItems(HorizontalAlign.Start)
             .width('100%')
-            Row({ space: 12 }) {
-              Text('活动水平')
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .width(72)
-              Select(this.activityOpts)
-                .selected(this.activityIndex)
-                .value(this.activityOpts[this.activityIndex].value)
-                .fontColor($r('app.color.text_primary'))
-                .layoutWeight(1)
-                .onSelect((idx: number): void => {
-                  this.activityIndex = idx;
-                })
-            }
-            .width('100%')
-            Row({ space: 12 }) {
-              Text('目标')
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .width(72)
-              Select(this.goalOpts)
-                .selected(this.goalIndex)
-                .value(this.goalOpts[this.goalIndex].value)
-                .fontColor($r('app.color.text_primary'))
-                .layoutWeight(1)
-                .onSelect((idx: number): void => {
-                  this.goalIndex = idx;
-                })
-            }
-            .width('100%')
-            Button('保存档案')
-              .fontSize(15)
-              .fontWeight(FontWeight.Bold)
-              .backgroundColor($r('app.color.accent'))
-              .borderRadius(22)
-              .constraintSize({ minHeight: 44 })
-              .shadow({ radius: 6, color: 'rgba(235,104,52,0.30)', offsetY: 2 })
-              .width('100%')
-              .onClick((): void => {
-                this.saveProfile();
-              })
           }
-        }
-
-        // 记一笔体重
-        CardContainer() {
-          Column({ space: 12 }) {
-            SectionTitle({ text: '记一笔体重' })
-            TextInput({ text: this.weightText, placeholder: '体重 kg' })
-              .type(InputType.NUMBER_DECIMAL)
-              .onChange((v: string): void => {
-                this.weightText = v;
-              })
-            TextInput({ text: this.bodyFatText, placeholder: '体脂率 %（可选）' })
-              .type(InputType.NUMBER_DECIMAL)
-              .onChange((v: string): void => {
-                this.bodyFatText = v;
-              })
-            Button('记录体重')
-              .fontSize(14)
-              .backgroundColor(Color.Transparent)
-              .fontColor($r('app.color.accent'))
-              .border({ width: 1.5, color: $r('app.color.accent') })
-              .borderRadius(22)
-              .constraintSize({ minHeight: 40 })
-              .width('100%')
-              .onClick((): void => {
-                this.addWeight();
-              })
+        } else if (this.profile !== null) {
+          CardContainer() {
+            Column({ space: 4 }) {
+              this.infoRow('性别', mapLabel(SEX_LABELS, this.profile.sex))
+              this.infoRow('年龄', this.ageFromBirth(this.profile.birthDate))
+              this.infoRow('生日', this.profile.birthDate ?? '—')
+              this.infoRow('身高',
+                this.profile.heightCm === null || this.profile.heightCm <= 0
+                  ? '—' : `${this.profile.heightCm} cm`)
+              this.infoRow('活动水平', mapLabel(ACTIVITY_LABELS, this.profile.activityLevel))
+              this.infoRow('目标', mapLabel(GOAL_LABELS, this.profile.goalType))
+            }
+            .width('100%')
+          }
+          CardContainer() {
+            Column({ space: 6 }) {
+              Text('✏️ 修改档案')
+                .fontSize(14)
+                .fontWeight(FontWeight.Bold)
+                .fontColor($r('app.color.text_primary'))
+              Text('直接跟教练说，例如「身高改成 180」或「目标改成增肌」，我会帮你更新。')
+                .fontSize(13)
+                .fontColor($r('app.color.text_secondary'))
+            }
+            .alignItems(HorizontalAlign.Start)
+            .width('100%')
           }
         }
       }
