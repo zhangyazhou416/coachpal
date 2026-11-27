@@ -548,7 +548,7 @@ export struct ChatPage {
   @Builder
   heroCard() {
     Column({ space: 10 }) {
-      Text('你好，我是 CoachPal 教练 💪')
+      Text('你好，我是练伴教练 💪')
         .fontSize(20)
         .fontWeight(FontWeight.Bold)
         .fontColor(Color.White)

@@ -1,7 +1,7 @@
 {
   "string": [
-    { "name": "app_name", "value": "CoachPal" },
-    { "name": "module_desc", "value": "CoachPal 主模块" },
-    { "name": "ability_desc", "value": "CoachPal 入口" }
+    { "name": "app_name", "value": "练伴" },
+    { "name": "module_desc", "value": "练伴主模块" },
+    { "name": "ability_desc", "value": "练伴入口" }
   ]
 }

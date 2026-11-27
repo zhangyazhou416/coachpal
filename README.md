@@ -1,6 +1,6 @@
-# CoachPal
+# 练伴 CoachPal
 
-鸿蒙原生健身与饮食记录 App（ArkTS/ArkUI，Stage 模型，bundleName `com.coachpal.app`）。**仓库根目录即 DevEco 工程**，无服务端依赖，数据全部本地。
+鸿蒙原生健身与饮食记录 App，中文名**练伴**（训练伙伴）。ArkTS/ArkUI，Stage 模型，bundleName `com.coachpal.app`。**仓库根目录即 DevEco 工程**，无服务端依赖，数据全部本地。
 
 - 记录身高、体重、体脂率、骨骼肌量、围度
 - 记录力量训练（自动估算 1RM）和每次训练的动作/组数/重量/次数
@@ -13,13 +13,11 @@
 
 | 教练问答 | 问答示例 |
 | --- | --- |
-| <img src="docs/screenshots/chat-qa.jpeg?v=2" width="270"/> | <img src="docs/screenshots/qa.jpeg?v=2" width="270"/> |
+| <img src="docs/screenshots/chat-qa.jpeg?v=2" width="270"/> | <img src="docs/screenshots/chat.jpeg?v=2" width="270"/> |
 | **身体概览** | **趋势** |
 | <img src="docs/screenshots/overview.jpeg?v=2" width="270"/> | <img src="docs/screenshots/trends.jpeg?v=2" width="270"/> |
 | **我的** | **AI 服务** |
 | <img src="docs/screenshots/profile.jpeg?v=2" width="270"/> | <img src="docs/screenshots/ai-config.jpeg?v=2" width="270"/> |
-| **个人档案** | **欢迎卡** |
-| <img src="docs/screenshots/profile-edit.jpeg?v=2" width="270"/> | <img src="docs/screenshots/chat.jpeg?v=2" width="270"/> |
 
 ## 快速开始
 
