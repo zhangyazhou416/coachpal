@@ -23,14 +23,10 @@ struct Index {
 
   @Builder
   navItem(icon: Resource, label: string, index: number) {
-    Column({ space: 2 }) {
+    Column() {
       SymbolGlyph(icon)
-        .fontSize(22)
+        .fontSize(24)
         .fontColor([this.currentTab === index ? $r('app.color.accent') : $r('app.color.text_secondary')])
-      Text(label)
-        .fontSize(11)
-        .fontColor(this.currentTab === index ? $r('app.color.accent') : $r('app.color.text_secondary'))
-        .fontWeight(this.currentTab === index ? FontWeight.Bold : FontWeight.Normal)
     }
     .justifyContent(FlexAlign.Center)
     .layoutWeight(1)
@@ -71,7 +67,7 @@ struct Index {
         this.navItem($r('sys.symbol.person_crop_circle_fill'), '我的', 2)
       }
       .width('100%')
-      .height(64)
+      .height(52)
       .backgroundColor(Color.Transparent)
       .alignItems(VerticalAlign.Center)
     }
