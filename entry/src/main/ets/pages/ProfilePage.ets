@@ -245,6 +245,7 @@ export struct ProfilePage {
     this.getUIContext().showAlertDialog({
       title: `关于 CoachPal`,
       message: `版本 v${this.versionName}
+开源地址：github.com/zhangyazhou416/coachpal
 
 本地优先：所有数据仅存本机，不上传。
 食物数据：《中国食物成分表（第 6 版）》
