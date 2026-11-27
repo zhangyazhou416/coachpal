@@ -131,6 +131,35 @@ const SUMMARY_SCHEMA: JsonSchema = {
   required: [],
 };
 
+const PROFILE_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    'sex': {
+      type: 'string',
+      description: '性别',
+      properties: {},
+      required: [],
+      enum: ['male', 'female', 'other'],
+    },
+    'height_cm': strSchema('身高 cm'),
+    'activity_level': {
+      type: 'string',
+      description: '活动水平',
+      properties: {},
+      required: [],
+      enum: ['sedentary', 'light', 'moderate', 'active', 'very_active'],
+    },
+    'goal_type': {
+      type: 'string',
+      description: '目标类型',
+      properties: {},
+      required: [],
+      enum: ['cut', 'maintain', 'bulk'],
+    },
+  },
+  required: [],
+};
+
 const TARGETS_SCHEMA: JsonSchema = {
   type: 'object',
   properties: {},
@@ -201,6 +230,11 @@ const COACH_TOOL_SPECS: CoachToolSpec[] = [
     schema: DIET_SCHEMA,
   },
   {
+    name: 'update_profile',
+    description: '更新档案：性别、身高、活动水平、目标类型（未提供的字段保持不变）。用户告知身高、活动量或目标类型变化时调用；记录体重请用 record_body_metric。',
+    schema: PROFILE_SCHEMA,
+  },
+  {
     name: 'set_goal',
     description: '设置目标：目标体重 kg / 体脂率 % / 骨骼肌量 kg。用户说「目标体重 72kg」「减脂到 15%」等时调用；设置后结合 get_recent_summary 给出训练方案建议。',
     schema: GOAL_SCHEMA,
@@ -249,6 +283,11 @@ interface RawArgs {
   kind?: string;
   target?: number;
   target_date?: string;
+  sex?: string;
+  age?: number;
+  height_cm?: number;
+  activity_level?: string;
+  goal_type?: string;
   name?: string;
   sets?: RawWorkoutSet[];
 }
@@ -326,13 +365,16 @@ export class CoachTools {
         return await CoachTools.recentSummary(repo);
       }
       if (name === 'get_daily_targets') {
-        return await CoachTools.dailyTargets(repo);
+        return await CoachTools.dailyTargets(repo, raw);
       }
       if (name === 'get_diet_status') {
-        return await CoachTools.dietStatus(repo);
+        return await CoachTools.dietStatus(repo, raw);
       }
       if (name === 'set_goal') {
         return await CoachTools.setGoal(repo, raw);
+      }
+      if (name === 'update_profile') {
+        return await CoachTools.updateProfile(repo, raw);
       }
       return new ToolOutcome(`未知工具：${name}`, null, null);
     } catch (e) {
@@ -510,40 +552,65 @@ export class CoachTools {
     return '维持';
   }
 
-  /** 档案 + 最新体重 → 每日摄入目标。null 表示资料不足。 */
-  private static async computeUserTargets(repo: Repo): Promise<TargetsPair> {
+  /** 档案（可被对话内覆盖值优先）+ 最新体重 → 每日摄入目标。 */
+  private static async computeUserTargets(repo: Repo, ov: RawArgs): Promise<TargetsPair> {
     const profile = await repo.getProfile();
     const metrics = await repo.listMetrics();
     const weight = metrics.length > 0 ? metrics[0].weightKg : null;
+    const age = CoachTools.ageFromBirth(profile === null ? null : profile.birthDate);
     const t = computeTargets(
-      profile === null ? null : profile.sex,
-      CoachTools.ageFromBirth(profile === null ? null : profile.birthDate),
-      profile === null ? null : profile.heightCm,
-      weight,
-      profile === null ? 'moderate' : profile.activityLevel,
-      profile === null ? 'maintain' : profile.goalType,
+      ov.sex ?? (profile === null ? null : profile.sex),
+      ov.age ?? age,
+      ov.height_cm ?? (profile === null ? null : profile.heightCm),
+      ov.weight_kg ?? weight,
+      ov.activity_level ?? (profile === null ? 'moderate' : profile.activityLevel),
+      ov.goal_type ?? (profile === null ? 'maintain' : profile.goalType),
     );
     let hint = '';
     if (t === null) {
       const missing: string[] = [];
-      if (profile === null) {
-        missing.push('档案（性别/年龄/身高/活动水平/目标）');
-      } else {
-        if (profile.heightCm === null) {
-          missing.push('身高');
-        }
+      const height = ov.height_cm ?? (profile === null ? null : profile.heightCm);
+      const w = ov.weight_kg ?? weight;
+      if (ov.sex === undefined && profile === null) {
+        missing.push('性别');
       }
-      if (weight === null) {
+      if (height === null) {
+        missing.push('身高');
+      }
+      if (w === null) {
         missing.push('体重');
       }
-      hint = `还缺少：${missing.join('、')}。请用户直接告诉教练这些信息。`;
+      hint = `还缺少：${missing.join('、')}。请用户直接告诉教练这些信息（或先调用 update_profile 保存档案）。`;
     }
     const out: TargetsPair = { t: t, hint: hint };
     return out;
   }
 
-  private static async dailyTargets(repo: Repo): Promise<ToolOutcome> {
-    const pair = await CoachTools.computeUserTargets(repo);
+  private static async updateProfile(repo: Repo, raw: RawArgs): Promise<ToolOutcome> {
+    const cur = await repo.getProfile();
+    const sex = raw.sex ?? (cur === null ? 'male' : cur.sex);
+    const height = raw.height_cm ?? (cur === null ? null : cur.heightCm);
+    const activity = raw.activity_level ?? (cur === null ? 'moderate' : cur.activityLevel);
+    const goal = raw.goal_type ?? (cur === null ? 'maintain' : cur.goalType);
+    await repo.saveProfile(sex, height, activity, goal);
+    const sexLabel = sex === 'female' ? '女' : (sex === 'other' ? '其他' : '男');
+    const actLabel: Record<string, string> = {
+      'sedentary': '久坐', 'light': '轻度', 'moderate': '中等',
+      'active': '活跃', 'very_active': '非常活跃',
+    };
+    const goalLabel: Record<string, string> = {
+      'cut': '减脂', 'maintain': '维持', 'bulk': '增肌',
+    };
+    const lines: string[] = [
+      `档案已更新：${sexLabel} · 身高 ${height === null ? '未知' : `${height}cm`}`
+        + ` · 活动 ${actLabel[activity] ?? activity} · 目标 ${goalLabel[goal] ?? goal}`,
+      '建议接着调用 get_daily_targets 计算每日摄入目标。',
+    ];
+    return new ToolOutcome(lines.join('\n'), null, null);
+  }
+
+  private static async dailyTargets(repo: Repo, ov: RawArgs): Promise<ToolOutcome> {
+    const pair = await CoachTools.computeUserTargets(repo, ov);
     if (pair.t === null) {
       return new ToolOutcome(pair.hint, null, null);
     }
@@ -563,8 +630,8 @@ export class CoachTools {
     return new ToolOutcome(lines.join('\n'), null, null);
   }
 
-  private static async dietStatus(repo: Repo): Promise<ToolOutcome> {
-    const pair = await CoachTools.computeUserTargets(repo);
+  private static async dietStatus(repo: Repo, ov: RawArgs): Promise<ToolOutcome> {
+    const pair = await CoachTools.computeUserTargets(repo, ov);
     if (pair.t === null) {
       return new ToolOutcome(pair.hint, null, null);
     }
