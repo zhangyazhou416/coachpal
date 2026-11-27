@@ -115,6 +115,32 @@ export struct MdText {
     return ok;
   }
 
+  private tableRows(lines: string[]): string[] {
+    return lines.filter((l: string): boolean => !this.isSepRow(l));
+  }
+
+  /** 每列按最大内容长度分配宽度权重（窄列短、长列宽），避免等宽错位。 */
+  private tableWidths(lines: string[]): number[] {
+    const rows: string[] = this.tableRows(lines);
+    let cols: number = 1;
+    for (const r of rows) {
+      cols = Math.max(cols, this.cells(r).length);
+    }
+    const w: number[] = [];
+    for (let ci: number = 0; ci < cols; ci++) {
+      let max: number = 2;
+      for (const r of rows) {
+        const cs: string[] = this.cells(r);
+        if (ci < cs.length) {
+          const plain: string = cs[ci].replace(/\*\*/g, '').replace(/`/g, '');
+          max = Math.max(max, Math.min(plain.length, 16));
+        }
+      }
+      w.push(max);
+    }
+    return w;
+  }
+
   build() {
     Column({ space: 4 }) {
       ForEach(this.blocks(), (b: MdBlock, bi: number) => {
@@ -157,6 +183,7 @@ export struct MdText {
               }
             }, (row: string, ri: number) => `${ri}_${row.substring(0, 20)}`)
           }
+          .width('100%')
           .margin({ top: 2, bottom: 2 })
         } else {
           ForEach(b.lines, (line: string) => {

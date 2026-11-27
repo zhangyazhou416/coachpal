@@ -187,12 +187,12 @@ struct AiConfigPage {
       Row() {
         SymbolGlyph(icon)
           .fontSize(18)
-          .fontColor([$r('app.color.primary')])
+          .fontColor([$r('app.color.accent')])
       }
-      .width(34)
-      .height(34)
-      .borderRadius(8)
-      .backgroundColor($r('app.color.divider'))
+      .width(36)
+      .height(36)
+      .borderRadius(10)
+      .backgroundColor('rgba(235,104,52,0.12)')
       .justifyContent(FlexAlign.Center)
 
       Column({ space: 2 }) {
@@ -215,7 +215,7 @@ struct AiConfigPage {
           .height(22)
           .textAlign(TextAlign.Center)
           .borderRadius(11)
-          .backgroundColor($r('app.color.primary'))
+          .backgroundColor($r('app.color.accent'))
       } else {
         Text('')
           .width(18)
@@ -274,25 +274,27 @@ struct AiConfigPage {
               Row({ space: 8 }) {
                 Text('OpenAI 兼容')
                   .fontSize(13)
+                  .fontWeight(this.protocol === LlmProtocol.OPENAI ? FontWeight.Bold : FontWeight.Normal)
                   .fontColor(this.protocol === LlmProtocol.OPENAI ? Color.White : $r('app.color.text_primary'))
                   .padding({ left: 14, right: 14, top: 7, bottom: 7 })
                   .borderRadius(16)
                   .backgroundColor(this.protocol === LlmProtocol.OPENAI
-                    ? $r('app.color.primary') : $r('app.color.card'))
+                    ? $r('app.color.accent') : $r('app.color.card'))
                   .border({ width: 1, color: this.protocol === LlmProtocol.OPENAI
-                    ? $r('app.color.primary') : $r('app.color.divider') })
+                    ? $r('app.color.accent') : $r('app.color.divider') })
                   .onClick((): void => {
                     this.selectProtocol(LlmProtocol.OPENAI);
                   })
                 Text('Anthropic 兼容')
                   .fontSize(13)
+                  .fontWeight(this.protocol === LlmProtocol.ANTHROPIC ? FontWeight.Bold : FontWeight.Normal)
                   .fontColor(this.protocol === LlmProtocol.ANTHROPIC ? Color.White : $r('app.color.text_primary'))
                   .padding({ left: 14, right: 14, top: 7, bottom: 7 })
                   .borderRadius(16)
                   .backgroundColor(this.protocol === LlmProtocol.ANTHROPIC
-                    ? $r('app.color.primary') : $r('app.color.card'))
+                    ? $r('app.color.accent') : $r('app.color.card'))
                   .border({ width: 1, color: this.protocol === LlmProtocol.ANTHROPIC
-                    ? $r('app.color.primary') : $r('app.color.divider') })
+                    ? $r('app.color.accent') : $r('app.color.divider') })
                   .onClick((): void => {
                     this.selectProtocol(LlmProtocol.ANTHROPIC);
                   })
