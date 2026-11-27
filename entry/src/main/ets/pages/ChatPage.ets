@@ -738,10 +738,10 @@ export struct ChatPage {
           .strokeWidth(1)
         Row({ space: 10 }) {
           Column() {
-            TextArea({ text: this.inputText, placeholder: '说说今天吃了什么、练了什么…' })
+            TextArea({ text: this.inputText, placeholder: '问问教练…' })
               .maxLines(4)
               .fontSize(14)
-              .constraintSize({ minHeight: 40 })
+              .constraintSize({ minHeight: 36 })
               .width('100%')
               .backgroundColor(Color.Transparent)
               .onChange((v: string): void => {
@@ -751,10 +751,10 @@ export struct ChatPage {
           .layoutWeight(1)
           .justifyContent(FlexAlign.Center)
           .backgroundColor($r('app.color.card'))
-          .borderRadius(22)
+          .borderRadius(20)
           .border({ width: 1, color: $r('app.color.divider') })
           .padding({ left: 14, right: 14 })
-          .constraintSize({ minHeight: 44 })
+          .constraintSize({ minHeight: 40 })
           Button(this.sending ? '…' : '发送')
             .fontSize(15)
             .fontWeight(FontWeight.Bold)

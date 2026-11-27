@@ -63,7 +63,7 @@ struct Index {
 
       Row() {
         this.navItem($r('sys.symbol.figure_walk'), '身体', 0)
-        this.navItem($r('sys.symbol.intelligent_coach'), '教练', 1)
+        this.navItem($r('sys.symbol.strength_training'), '教练', 1)
         this.navItem($r('sys.symbol.person_crop_circle_fill'), '我的', 2)
       }
       .width('100%')
