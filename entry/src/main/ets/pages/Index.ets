@@ -17,8 +17,8 @@ struct Index {
     Column() {
       Text(label)
         .fontSize(12)
-        .fontColor(this.currentTab === index ? $r('app.color.primary') : $r('app.color.text_secondary'))
-        .fontWeight(this.currentTab === index ? FontWeight.Medium : FontWeight.Normal)
+        .fontColor(this.currentTab === index ? $r('app.color.accent') : $r('app.color.text_secondary'))
+        .fontWeight(this.currentTab === index ? FontWeight.Bold : FontWeight.Normal)
     }
     .justifyContent(FlexAlign.Center)
     .width('100%')

@@ -3,6 +3,7 @@ import { Http, HttpResult } from '../core/net/Http';
 import { AiSource, LlmProtocol } from '../core/settings/Settings';
 import { localChatModel } from '@kit.DataAugmentationKit';
 import { BusinessError, deviceInfo } from '@kit.BasicServicesKit';
+import { LengthMetrics } from '@kit.ArkUI';
 import { ExerciseRow, decodeList } from '../core/repo/Model';
 import { Repo } from '../core/repo/Repo';
 import {
@@ -65,11 +66,13 @@ export class ChatMsg {
   readonly role: string;
   readonly content: string;
   readonly exercise: ExerciseRow | null;
+  readonly hero: boolean;
 
-  constructor(role: string, content: string, exercise: ExerciseRow | null = null) {
+  constructor(role: string, content: string, exercise: ExerciseRow | null = null, hero: boolean = false) {
     this.role = role;
     this.content = content;
     this.exercise = exercise;
+    this.hero = hero;
   }
 }
 
@@ -147,14 +150,7 @@ interface AnthropicResponse {
 }
 
 function greeting(): ChatMsg {
-  return new ChatMsg('assistant',
-    '你好！我是 CoachPal 教练 💪\n\n'
-    + '直接跟我说就行，比如：\n'
-    + '· 「今天体重 77.9，体脂 21.4」\n'
-    + '· 「午饭吃了 150g 鸡胸肉、200g 米饭」\n'
-    + '· 「卧推 80kg 做了 5 组，RPE 8」\n'
-    + '· 「卧推怎么做？」——我会给你动作要领和 GIF 示范\n'
-    + '· 「帮我安排下周的训练计划」');
+  return new ChatMsg('assistant', '', null, true);
 }
 
 /// 教练页：AI 对话。华为端侧模型（离线）或自定义接口（OpenAI/Anthropic 兼容，支持工具调用落库/查动作）。
@@ -540,8 +536,77 @@ export struct ChatPage {
   }
 
   @Builder
+  heroCard() {
+    Column({ space: 10 }) {
+      Text('你好，我是 CoachPal 教练 💪')
+        .fontSize(20)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(Color.White)
+      Text('直接跟我说就行，比如：')
+        .fontSize(13)
+        .fontColor('#E6FFFFFF')
+      Column({ space: 6 }) {
+        Text('· 「今天体重 77.9，体脂 21.4」').fontSize(13).fontColor('#E6FFFFFF')
+        Text('· 「午饭吃了 150g 鸡胸肉、200g 米饭」').fontSize(13).fontColor('#E6FFFFFF')
+        Text('· 「卧推 80kg 做了 5 组，RPE 8」').fontSize(13).fontColor('#E6FFFFFF')
+        Text('· 「卧推怎么做？」——动作要领 + GIF 示范').fontSize(13).fontColor('#E6FFFFFF')
+        Text('· 「帮我安排下周的训练计划」').fontSize(13).fontColor('#E6FFFFFF')
+      }
+      .alignItems(HorizontalAlign.Start)
+      Flex({ wrap: FlexWrap.Wrap, space: { main: LengthMetrics.vp(8), cross: LengthMetrics.vp(8) } }) {
+        Button('🏋️ 记体重体脂')
+          .fontSize(12)
+          .fontColor(Color.White)
+          .backgroundColor('#33FFFFFF')
+          .borderRadius(14)
+          .onClick((): void => {
+            this.inputText = '今天体重 ，体脂 ';
+          })
+        Button('🤸 查动作示范')
+          .fontSize(12)
+          .fontColor(Color.White)
+          .backgroundColor('#33FFFFFF')
+          .borderRadius(14)
+          .onClick((): void => {
+            this.inputText = '卧推怎么做？';
+          })
+        Button('🍚 记一顿饭')
+          .fontSize(12)
+          .fontColor(Color.White)
+          .backgroundColor('#33FFFFFF')
+          .borderRadius(14)
+          .onClick((): void => {
+            this.inputText = '午饭吃了：';
+          })
+        Button('📋 排训练计划')
+          .fontSize(12)
+          .fontColor(Color.White)
+          .backgroundColor('#33FFFFFF')
+          .borderRadius(14)
+          .onClick((): void => {
+            this.inputText = '帮我安排一周的训练计划，目标是';
+          })
+      }
+      .width('100%')
+      .margin({ top: 2 })
+    }
+    .alignItems(HorizontalAlign.Start)
+    .width('100%')
+    .padding(16)
+    .borderRadius(18)
+    .linearGradient({
+      angle: 135,
+      colors: [[$r('app.color.primary'), 0], [$r('app.color.accent'), 1]],
+    })
+    .shadow({ radius: 10, color: 'rgba(235,104,52,0.30)', offsetY: 3 })
+    .margin({ top: 4, bottom: 6 })
+  }
+
+  @Builder
   bubble(m: ChatMsg) {
-    if (m.role === 'note') {
+    if (m.hero === true) {
+      this.heroCard()
+    } else if (m.role === 'note') {
       Text(m.content)
         .fontSize(12)
         .fontColor($r('app.color.text_secondary'))
@@ -561,17 +626,18 @@ export struct ChatPage {
             if (m.role === 'user') {
               Text(m.content)
                 .fontSize(14)
+                .fontWeight(FontWeight.Medium)
                 .fontColor(Color.White)
                 .constraintSize({ maxWidth: '82%' })
                 .padding({ left: 14, right: 14, top: 10, bottom: 10 })
                 .backgroundColor($r('app.color.primary'))
                 .borderRadius({
-                  topLeft: 14,
-                  topRight: 14,
-                  bottomLeft: 14,
+                  topLeft: 18,
+                  topRight: 18,
+                  bottomLeft: 18,
                   bottomRight: 4,
                 })
-                .border({ width: 1, color: $r('app.color.divider') })
+                .shadow({ radius: 6, color: 'rgba(42,120,214,0.28)', offsetY: 2 })
             } else {
               Column() {
                 MdText({ content: m.content })
@@ -581,12 +647,20 @@ export struct ChatPage {
               .padding({ left: 14, right: 14, top: 10, bottom: 10 })
               .backgroundColor($r('app.color.card'))
               .borderRadius({
-                topLeft: 14,
+                topLeft: 4,
                 topRight: 14,
-                bottomLeft: 4,
+                bottomLeft: 14,
                 bottomRight: 14,
               })
-              .border({ width: 1, color: $r('app.color.divider') })
+              .border({
+                width: { left: 3, top: 1, right: 1, bottom: 1 },
+                color: {
+                  left: $r('app.color.accent'),
+                  top: $r('app.color.divider'),
+                  right: $r('app.color.divider'),
+                  bottom: $r('app.color.divider'),
+                },
+              })
             }
           }
         }
@@ -662,18 +736,35 @@ export struct ChatPage {
         Divider()
           .color($r('app.color.divider'))
           .strokeWidth(1)
-        Row({ space: 8 }) {
-          TextArea({ text: this.inputText, placeholder: '说说今天吃了什么、练了什么…' })
-            .maxLines(4)
-            .fontSize(14)
-            .constraintSize({ minHeight: 40 })
-            .layoutWeight(1)
-            .backgroundColor(Color.Transparent)
-            .onChange((v: string): void => {
-              this.inputText = v;
-            })
-          Button('发送')
-            .backgroundColor($r('app.color.primary'))
+        Row({ space: 10 }) {
+          Column() {
+            TextArea({ text: this.inputText, placeholder: '说说今天吃了什么、练了什么…' })
+              .maxLines(4)
+              .fontSize(14)
+              .constraintSize({ minHeight: 40 })
+              .width('100%')
+              .backgroundColor(Color.Transparent)
+              .onChange((v: string): void => {
+                this.inputText = v;
+              })
+          }
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor($r('app.color.card'))
+          .borderRadius(22)
+          .border({ width: 1, color: $r('app.color.divider') })
+          .padding({ left: 14, right: 14 })
+          .constraintSize({ minHeight: 44 })
+          Button(this.sending ? '…' : '发送')
+            .fontSize(15)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Color.White)
+            .backgroundColor($r('app.color.accent'))
+            .borderRadius(22)
+            .constraintSize({ minHeight: 44 })
+            .padding({ left: 18, right: 18 })
+            .shadow({ radius: 6, color: 'rgba(235,104,52,0.35)', offsetY: 2 })
+            .opacity(this.sending ? 0.55 : 1)
             .enabled(!this.sending)
             .onClick((): void => {
               this.send();
