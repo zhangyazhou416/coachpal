@@ -11,6 +11,7 @@ import {
 } from '../core/coach/CoachTools';
 import { CATEGORY_ZH, EQUIPMENT_ZH, MUSCLE_ZH } from '../core/domain/set_parser';
 import { ExerciseSkill } from '../core/coach/ExerciseSkill';
+import { MdText } from '../components/MdText';
 import { todayIso } from '../core/util/Time';
 
 const COACH_PROMPT: string =
@@ -557,19 +558,36 @@ export struct ChatPage {
             ExerciseCardView({ ex: m.exercise ?? EMPTY_EXERCISE })
           }
           if (m.content.length > 0) {
-            Text(m.content)
-              .fontSize(14)
-              .fontColor(m.role === 'user' ? Color.White : $r('app.color.text_primary'))
+            if (m.role === 'user') {
+              Text(m.content)
+                .fontSize(14)
+                .fontColor(Color.White)
+                .constraintSize({ maxWidth: '82%' })
+                .padding({ left: 14, right: 14, top: 10, bottom: 10 })
+                .backgroundColor($r('app.color.primary'))
+                .borderRadius({
+                  topLeft: 14,
+                  topRight: 14,
+                  bottomLeft: 14,
+                  bottomRight: 4,
+                })
+                .border({ width: 1, color: $r('app.color.divider') })
+            } else {
+              Column() {
+                MdText({ content: m.content })
+              }
+              .alignItems(HorizontalAlign.Start)
               .constraintSize({ maxWidth: '82%' })
               .padding({ left: 14, right: 14, top: 10, bottom: 10 })
-              .backgroundColor(m.role === 'user' ? $r('app.color.primary') : $r('app.color.card'))
+              .backgroundColor($r('app.color.card'))
               .borderRadius({
                 topLeft: 14,
                 topRight: 14,
-                bottomLeft: m.role === 'user' ? 14 : 4,
-                bottomRight: m.role === 'user' ? 4 : 14,
+                bottomLeft: 4,
+                bottomRight: 14,
               })
               .border({ width: 1, color: $r('app.color.divider') })
+            }
           }
         }
         .constraintSize({ maxWidth: '86%' })
