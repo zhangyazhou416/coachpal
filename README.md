@@ -9,6 +9,16 @@
 - AI 教练对话：华为端侧模型或自定义 OpenAI 兼容接口（App 内「AI 配置」页直连，不经过服务器）
 - 趋势图与周复盘、明暗主题
 
+## 界面预览
+
+| 教练对话 | 身体概览 |
+| --- | --- |
+| <img src="docs/screenshots/chat.jpeg" width="270"/> | <img src="docs/screenshots/overview.jpeg" width="270"/> |
+| **趋势** | **我的** |
+| <img src="docs/screenshots/trends.jpeg" width="270"/> | <img src="docs/screenshots/profile.jpeg" width="270"/> |
+| **AI 服务** | **个人档案** |
+| <img src="docs/screenshots/ai-config.jpeg" width="270"/> | <img src="docs/screenshots/profile-edit.jpeg" width="270"/> |
+
 ## 快速开始
 
 用 DevEco Studio 打开仓库根目录，等待 Sync 完成，连接设备/模拟器后 Run。
