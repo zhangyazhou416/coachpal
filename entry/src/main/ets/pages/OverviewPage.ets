@@ -164,9 +164,9 @@ export struct OverviewPage {
         .fontSize(12)
         .fontColor($r('app.color.text_secondary'))
       Text(value)
-        .fontSize(18)
-        .fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.text_primary'))
+        .fontSize(22)
+        .fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.accent'))
       Text(sub)
         .fontSize(11)
         .fontColor($r('app.color.text_secondary'))
@@ -231,15 +231,16 @@ export struct OverviewPage {
                 Row() {
                   Text(pr.lift)
                     .fontSize(14)
+                    .fontWeight(FontWeight.Medium)
                     .fontColor($r('app.color.text_primary'))
                     .layoutWeight(1)
                   Text(`${fmtKg(pr.maxWeight)}kg × ${pr.maxWeightReps}`)
                     .fontSize(14)
                     .fontColor($r('app.color.text_secondary'))
                   Text(`${pr.est1rm.toFixed(1)} kg`)
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Medium)
-                    .fontColor($r('app.color.text_primary'))
+                    .fontSize(15)
+                    .fontWeight(FontWeight.Bold)
+                    .fontColor($r('app.color.accent'))
                     .margin({ left: 20 })
                 }
                 .width('100%')
@@ -261,13 +262,13 @@ export struct OverviewPage {
               SectionTitle({ text: '近 7 天' })
               Text(this.week.dietDays > 0
                 ? `饮食：记录 ${this.week.dietDays} 天 · 日均 ${this.week.avgKcal.toFixed(0)} kcal`
-                : '饮食：近 7 天无记录')
+                : '🍚 饮食：近 7 天无记录')
                 .fontSize(14)
                 .fontColor($r('app.color.text_primary'))
                 .width('100%')
               Text(this.week.workoutCount > 0
                 ? `训练：${this.week.workoutCount} 次 · 总训练量 ${this.week.volumeKg.toFixed(0)} kg`
-                : '训练：近 7 天无记录')
+                : '🏋️ 训练：近 7 天无记录')
                 .fontSize(14)
                 .fontColor($r('app.color.text_primary'))
                 .width('100%')

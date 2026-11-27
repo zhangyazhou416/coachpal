@@ -199,7 +199,12 @@ struct ProfileEditPage {
             }
             .width('100%')
             Button('保存档案')
-              .backgroundColor($r('app.color.primary'))
+              .fontSize(15)
+              .fontWeight(FontWeight.Bold)
+              .backgroundColor($r('app.color.accent'))
+              .borderRadius(22)
+              .constraintSize({ minHeight: 44 })
+              .shadow({ radius: 6, color: 'rgba(235,104,52,0.30)', offsetY: 2 })
               .width('100%')
               .onClick((): void => {
                 this.saveProfile();
@@ -222,8 +227,12 @@ struct ProfileEditPage {
                 this.bodyFatText = v;
               })
             Button('记录体重')
-              .backgroundColor($r('app.color.divider'))
-              .fontColor($r('app.color.text_primary'))
+              .fontSize(14)
+              .backgroundColor(Color.Transparent)
+              .fontColor($r('app.color.accent'))
+              .border({ width: 1.5, color: $r('app.color.accent') })
+              .borderRadius(22)
+              .constraintSize({ minHeight: 40 })
               .width('100%')
               .onClick((): void => {
                 this.addWeight();

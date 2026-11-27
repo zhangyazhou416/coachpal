@@ -20,9 +20,10 @@ export struct CardContainer {
     }
     .width('100%')
     .backgroundColor($r('app.color.card'))
-    .borderRadius(12)
+    .borderRadius(14)
     .borderWidth(1)
     .borderColor($r('app.color.card_border'))
+    .shadow({ radius: 8, color: 'rgba(0,0,0,0.06)', offsetY: 2 })
   }
 }
 
@@ -32,10 +33,19 @@ export struct SectionTitle {
   @Param text: string = '';
 
   build() {
-    Text(this.text)
-      .fontSize(16)
-      .fontWeight(FontWeight.Medium)
-      .fontColor($r('app.color.text_primary'))
+    Row({ space: 8 }) {
+      Divider()
+        .vertical(true)
+        .strokeWidth(4)
+        .color($r('app.color.accent'))
+        .height(16)
+      Text(this.text)
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
+    }
+    .alignItems(VerticalAlign.Center)
+    .margin({ bottom: 4 })
   }
 }
 
@@ -57,9 +67,11 @@ export struct TagChip {
         .margin({ left: 6 })
         .onClick((): void => this.onRemove())
     }
-    .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-    .backgroundColor($r('app.color.divider'))
+    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+    .backgroundColor($r('app.color.card'))
     .borderRadius(16)
+    .borderWidth(1)
+    .borderColor($r('app.color.primary'))
     .margin({ right: 8, top: 4, bottom: 4 })
   }
 }

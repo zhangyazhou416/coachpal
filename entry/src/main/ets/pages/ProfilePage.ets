@@ -38,12 +38,12 @@ export struct ProfilePage {
       Row() {
         SymbolGlyph(icon)
           .fontSize(18)
-          .fontColor([$r('app.color.primary')])
+          .fontColor([$r('app.color.accent')])
       }
-      .width(34)
-      .height(34)
-      .borderRadius(8)
-      .backgroundColor($r('app.color.divider'))
+      .width(36)
+      .height(36)
+      .borderRadius(10)
+      .backgroundColor('rgba(235,104,52,0.12)')
       .justifyContent(FlexAlign.Center)
 
       Column({ space: 2 }) {
@@ -71,45 +71,51 @@ export struct ProfilePage {
     Scroll() {
       Column({ space: 12 }) {
         // 用户信息
-        CardContainer() {
-          Column({ space: 12 }) {
-            Row({ space: 14 }) {
-              Row() {
-                SymbolGlyph($r('sys.symbol.person_crop_circle_fill'))
-                  .fontSize(26)
-                  .fontColor([Color.White])
-              }
-              .width(52)
-              .height(52)
-              .borderRadius(26)
-              .backgroundColor($r('app.color.primary'))
-              .justifyContent(FlexAlign.Center)
+        Column({ space: 12 }) {
+          Row({ space: 14 }) {
+            Row() {
+              SymbolGlyph($r('sys.symbol.person_crop_circle_fill'))
+                .fontSize(28)
+                .fontColor([$r('app.color.accent')])
+            }
+            .width(54)
+            .height(54)
+            .borderRadius(27)
+            .backgroundColor(Color.White)
+            .justifyContent(FlexAlign.Center)
+            .shadow({ radius: 6, color: 'rgba(0,0,0,0.18)', offsetY: 2 })
 
-              Column({ space: 2 }) {
-                Text('CoachPal')
-                  .fontSize(17)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor($r('app.color.text_primary'))
-                Text(this.aiLabel)
-                  .fontSize(12)
-                  .fontColor(this.aiOk ? $r('app.color.status_good') : $r('app.color.text_secondary'))
-              }
-              .alignItems(HorizontalAlign.Start)
-              .layoutWeight(1)
-
-              Text(this.aiOk ? '✓' : '!')
-                .fontSize(14)
+            Column({ space: 2 }) {
+              Text('CoachPal')
+                .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)
-                .width(24)
-                .height(24)
-                .textAlign(TextAlign.Center)
-                .borderRadius(12)
-                .backgroundColor(this.aiOk ? $r('app.color.status_good') : $r('app.color.status_warn'))
+              Text(this.aiLabel)
+                .fontSize(12)
+                .fontColor('#E6FFFFFF')
             }
-            .width('100%')
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
+
+            Text(this.aiOk ? '✓' : '!')
+              .fontSize(14)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(Color.White)
+              .width(24)
+              .height(24)
+              .textAlign(TextAlign.Center)
+              .borderRadius(12)
+              .backgroundColor(this.aiOk ? $r('app.color.status_good') : $r('app.color.status_warn'))
           }
+          .width('100%')
         }
+        .padding(18)
+        .borderRadius(16)
+        .linearGradient({
+          angle: 135,
+          colors: [[$r('app.color.primary'), 0], [$r('app.color.accent'), 1]],
+        })
+        .shadow({ radius: 10, color: 'rgba(235,104,52,0.30)', offsetY: 3 })
 
         // 设置菜单
         CardContainer() {

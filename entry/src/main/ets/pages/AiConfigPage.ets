@@ -317,16 +317,23 @@ struct AiConfigPage {
                   this.modelText = v;
                 })
               Button(this.saving ? '保存中…' : '保存配置')
-                .backgroundColor($r('app.color.primary'))
+                .fontSize(15)
+                .fontWeight(FontWeight.Bold)
+                .backgroundColor($r('app.color.accent'))
+                .borderRadius(22)
+                .constraintSize({ minHeight: 44 })
                 .width('100%')
                 .enabled(!this.saving)
                 .onClick((): void => {
                   this.saveCustomConfig();
                 })
               Button(this.testing ? '测试中…' : '测试连接')
+                .fontSize(14)
                 .backgroundColor(Color.Transparent)
-                .fontColor($r('app.color.primary'))
-                .border({ width: 1, color: $r('app.color.primary') })
+                .fontColor($r('app.color.accent'))
+                .border({ width: 1.5, color: $r('app.color.accent') })
+                .borderRadius(22)
+                .constraintSize({ minHeight: 44 })
                 .width('100%')
                 .enabled(!this.testing && !this.saving)
                 .onClick((): void => {

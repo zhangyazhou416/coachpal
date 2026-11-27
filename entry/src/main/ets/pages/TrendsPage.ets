@@ -143,13 +143,13 @@ export struct TrendsPage {
     recent.sort(compareEntry);
     let dietLine: string;
     if (recent.length === 0) {
-      dietLine = '饮食：无记录';
+      dietLine = '🍚 饮食：无记录';
     } else {
       let total = 0;
       for (const r of recent) {
         total += r[1];
       }
-      dietLine = `饮食：记录 ${recent.length} 天 · 日均 ${(total / recent.length).toFixed(0)} kcal`;
+      dietLine = `🍚 饮食：记录 ${recent.length} 天 · 日均 ${(total / recent.length).toFixed(0)} kcal`;
     }
 
     const weekWorkouts: WorkoutEntry[] = [];
@@ -164,17 +164,17 @@ export struct TrendsPage {
         volume += (s.weightKg ?? 0) * (s.reps ?? 0);
       }
     }
-    const workoutLine = `训练：${weekWorkouts.length} 次 · 总训练量 ${volume.toFixed(0)} kg`;
+    const workoutLine = `🏋️ 训练：${weekWorkouts.length} 次 · 总训练量 ${volume.toFixed(0)} kg`;
 
     const weights = this.weightPoints();
-    let weightLine = '体重：记录两次后显示变化';
+    let weightLine = '⚖️ 体重：记录两次后显示变化';
     if (weights.length >= 2) {
       const first = weights[0];
       const last = weights[weights.length - 1];
       const delta = last.value - first.value;
       const sign = delta >= 0 ? '+' : '';
       weightLine =
-        `体重：${first.value.toFixed(1)} → ${last.value.toFixed(1)} kg（${sign}${delta.toFixed(1)}）`;
+        `⚖️ 体重：${first.value.toFixed(1)} → ${last.value.toFixed(1)} kg（${sign}${delta.toFixed(1)}）`;
     }
     const lines: string[] = [dietLine, workoutLine, weightLine];
     return lines;
@@ -186,9 +186,12 @@ export struct TrendsPage {
   siteChip(g: SiteGroup) {
     Text(siteLabel(g.site))
       .fontSize(13)
-      .fontColor(this.site === g.site ? $r('app.color.card') : $r('app.color.text_primary'))
-      .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-      .backgroundColor(this.site === g.site ? SERIES3 : $r('app.color.divider'))
+      .fontWeight(this.site === g.site ? FontWeight.Bold : FontWeight.Normal)
+      .fontColor(this.site === g.site ? Color.White : $r('app.color.text_primary'))
+      .padding({ left: 14, right: 14, top: 6, bottom: 6 })
+      .backgroundColor(this.site === g.site ? $r('app.color.accent') : $r('app.color.card'))
+      .borderWidth(1)
+      .borderColor(this.site === g.site ? $r('app.color.accent') : $r('app.color.card_border'))
       .borderRadius(16)
       .margin({ right: 8, top: 4, bottom: 4 })
       .onClick((): void => {
