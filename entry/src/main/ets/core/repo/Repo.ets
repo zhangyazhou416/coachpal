@@ -11,11 +11,31 @@ import {
   ProfileRow, BodyMetricRow, MeasurementRow, GoalRow, StrengthLogRow,
   MealRow, MealItemRow, WorkoutRow, WorkoutSetRow, ExerciseRow,
   MealEntry, WorkoutEntry, StrengthResult, StrengthSeries, SeriesPoint,
-  FoodPortion, CustomItemInput, MeasurementInput,
+  FoodPortion, CustomItemInput, MeasurementInput, RestorePayload,
 } from './Model';
 
 function pred(table: string): relationalStore.RdbPredicates {
   return new relationalStore.RdbPredicates(table);
+}
+
+/** 行接口字段 → 列名无法驼峰转换的特例（estimated1rm → estimated_1rm）。 */
+const STRENGTH_COL_OVERRIDES: Record<string, string> = { 'estimated1rm': 'estimated_1rm' };
+
+/** 备份行对象 → ValuesBucket：驼峰键转 snake_case 列名（含特例覆盖）。 */
+function rowToBucket(row: object,
+  overrides: Record<string, string>): relationalStore.ValuesBucket {
+  const b: relationalStore.ValuesBucket = {};
+  const rec = row as Record<string, Object | null>;
+  const keys: string[] = Object.keys(rec);
+  for (const k of keys) {
+    const col = overrides[k] ?? k.replace(/([A-Z])/g, (c: string): string => `_${c.toLowerCase()}`);
+    const v = rec[k];
+    if (v === undefined) {
+      continue;
+    }
+    b[col] = v as relationalStore.ValueType;
+  }
+  return b;
 }
 
 function mapProfile(r: Row): ProfileRow {
@@ -286,6 +306,46 @@ export class Repo {
   /** 参考数据表行数（foods/exercises 等，无 deleted 列的表）。 */
   async countTable(table: string): Promise<number> {
     return this.db.count(table);
+  }
+
+  /** 用备份恢复全部业务数据：清空后整批重插（单事务，失败回滚）。 */
+  async restoreFromBackup(payload: RestorePayload): Promise<void> {
+    await this.db.tx(async (): Promise<void> => {
+      const tables: string[] = ['body_metrics', 'measurements', 'goals', 'strength_logs',
+        'meals', 'meal_items', 'workouts', 'workout_sets'];
+      for (const t of tables) {
+        await this.db.exec(`DELETE FROM ${t}`);
+      }
+      await this.db.exec('DELETE FROM profile');
+      if (payload.profile !== null) {
+        await this.db.insert('profile', rowToBucket(payload.profile, STRENGTH_COL_OVERRIDES));
+      }
+      for (const r of payload.bodyMetrics) {
+        await this.db.insert('body_metrics', rowToBucket(r, STRENGTH_COL_OVERRIDES));
+      }
+      for (const r of payload.measurements) {
+        await this.db.insert('measurements', rowToBucket(r, STRENGTH_COL_OVERRIDES));
+      }
+      for (const r of payload.goals) {
+        await this.db.insert('goals', rowToBucket(r, STRENGTH_COL_OVERRIDES));
+      }
+      for (const r of payload.strengthLogs) {
+        await this.db.insert('strength_logs', rowToBucket(r, STRENGTH_COL_OVERRIDES));
+      }
+      for (const e of payload.meals) {
+        await this.db.insert('meals', rowToBucket(e.meal, STRENGTH_COL_OVERRIDES));
+        for (const it of e.items) {
+          await this.db.insert('meal_items', rowToBucket(it, STRENGTH_COL_OVERRIDES));
+        }
+      }
+      for (const w of payload.workouts) {
+        await this.db.insert('workouts', rowToBucket(w.workout, STRENGTH_COL_OVERRIDES));
+        for (const s of w.sets) {
+          await this.db.insert('workout_sets', rowToBucket(s, STRENGTH_COL_OVERRIDES));
+        }
+      }
+    });
+    this.invalidateCaches();
   }
 
   async listGoals(): Promise<GoalRow[]> {

@@ -1,7 +1,7 @@
 import { AppServices } from '../core/services';
 import { CardContainer, goalKindLabel } from '../components/Common';
-import { AiSource } from '../core/settings/Settings';
-import { GoalRow, BodyMetricRow, MeasurementRow, StrengthLogRow, MealEntry, WorkoutEntry, ProfileRow } from '../core/repo/Model';
+import { GoalRow, BodyMetricRow, MeasurementRow, StrengthLogRow, RestorePayload } from '../core/repo/Model';
+import { util } from '@kit.ArkTS';
 import { router } from '@kit.ArkUI';
 import { bundleManager } from '@kit.AbilityKit';
 import { picker, fileIo } from '@kit.CoreFileKit';
@@ -64,27 +64,17 @@ function fmtVal(v: number | null): string {
   return v === null ? '—' : String(Math.round(v * 10) / 10);
 }
 
-interface ExportPayload {
-  exportedAt: string;
-  profile: ProfileRow | null;
-  bodyMetrics: BodyMetricRow[];
-  measurements: MeasurementRow[];
-  goals: GoalRow[];
-  strengthLogs: StrengthLogRow[];
-  meals: MealEntry[];
-  workouts: WorkoutEntry[];
-}
+
 
 /// 我的页：渐变用户卡 + 数据速览 + 目标进度 + 设置菜单（档案/AI/导出）+ 关于。
 @ComponentV2
 export struct ProfilePage {
   @Param hubVersion: number = 0;
-  @Local aiOk: boolean = false;
-  @Local aiLabel: string = '';
   @Local stats: DataStats | null = null;
   @Local goalItems: GoalWithCurrent[] = [];
   @Local versionName: string = '';
   @Local exporting: boolean = false;
+  @Local importing: boolean = false;
   private latestMetric: BodyMetricRow | null = null;
 
   aboutToAppear(): void {
@@ -99,14 +89,6 @@ export struct ProfilePage {
   private async refresh(): Promise<void> {
     const svc = AppServices.getInstance();
     await svc.whenReady();
-    const source = await svc.settings.getAiSource();
-    if (source === AiSource.CUSTOM) {
-      this.aiOk = await svc.settings.isAiConfigured();
-      this.aiLabel = this.aiOk ? 'AI：自定义模型' : 'AI：自定义模型待配置';
-    } else {
-      this.aiOk = true;
-      this.aiLabel = 'AI：华为端侧模型';
-    }
     await this.loadExtra();
   }
 
@@ -162,7 +144,7 @@ export struct ProfilePage {
     this.exporting = true;
     try {
       const profile = await repo.getProfile();
-      const payload: ExportPayload = {
+      const payload: RestorePayload = {
         exportedAt: new Date().toISOString(),
         profile: profile,
         bodyMetrics: await repo.listMetrics(),
@@ -186,6 +168,94 @@ export struct ProfilePage {
     } finally {
       this.exporting = false;
     }
+  }
+
+  private async importData(): Promise<void> {
+    if (this.importing) {
+      return;
+    }
+    const repo = AppServices.getInstance().repo;
+    if (repo === null) {
+      return;
+    }
+    this.importing = true;
+    let payload: RestorePayload | null = null;
+    try {
+      const opts = new picker.DocumentSelectOptions();
+      opts.maxSelectNumber = 1;
+      const uris: string[] = await (new picker.DocumentViewPicker()).select(opts);
+      if (uris.length === 0) {
+        return;
+      }
+      const file = fileIo.openSync(uris[0], fileIo.OpenMode.READ_ONLY);
+      const size = fileIo.statSync(file.fd).size;
+      const buf = new Uint8Array(size);
+      fileIo.readSync(file.fd, buf);
+      fileIo.closeSync(file.fd);
+      const text = util.TextDecoder.create('utf-8').decodeToString(buf);
+      payload = JSON.parse(text) as RestorePayload;
+      if (payload.exportedAt === undefined || payload.bodyMetrics === undefined
+        || payload.meals === undefined || payload.workouts === undefined) {
+        this.toast('不是有效的 CoachPal 备份文件');
+        return;
+      }
+    } catch (e) {
+      this.toast('读取备份失败：' + (e as Error).message);
+      this.importing = false;
+      return;
+    }
+    const picked = payload;
+    this.getUIContext().showAlertDialog({
+      title: '导入备份',
+      message: `备份时间：${picked.exportedAt}
+导入将覆盖当前全部数据（档案、体重、饮食、训练全部替换）。确定继续？`,
+      autoCancel: true,
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '取消', action: (): void => {
+          this.importing = false;
+        }
+      },
+      secondaryButton: {
+        value: '确认导入', fontColor: $r('app.color.accent'),
+        action: (): void => {
+          this.applyImport(picked);
+        }
+      },
+    });
+  }
+
+  private async applyImport(payload: RestorePayload): Promise<void> {
+    const repo = AppServices.getInstance().repo;
+    if (repo === null) {
+      return;
+    }
+    try {
+      await repo.restoreFromBackup(payload);
+      this.toast('导入成功 ✓');
+      await this.refresh();
+    } catch (e) {
+      this.toast('导入失败：' + (e as Error).message);
+    } finally {
+      this.importing = false;
+    }
+  }
+
+  private showAbout(): void {
+    this.getUIContext().showAlertDialog({
+      title: `关于 CoachPal`,
+      message: `版本 v${this.versionName}
+
+本地优先：所有数据仅存本机，不上传。
+食物数据：《中国食物成分表（第 6 版）》
+动作媒体：© Gym visual（仅限个人使用）`,
+      autoCancel: true,
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '知道了', action: (): void => {
+        }
+      },
+    });
   }
 
   private toast(msg: string): void {
@@ -286,53 +356,6 @@ export struct ProfilePage {
   build() {
     Scroll() {
       Column({ space: 12 }) {
-        // 用户信息（渐变 hero）
-        Column({ space: 12 }) {
-          Row({ space: 14 }) {
-            Row() {
-              SymbolGlyph($r('sys.symbol.person_crop_circle_fill'))
-                .fontSize(28)
-                .fontColor([$r('app.color.accent')])
-            }
-            .width(54)
-            .height(54)
-            .borderRadius(27)
-            .backgroundColor(Color.White)
-            .justifyContent(FlexAlign.Center)
-            .shadow({ radius: 6, color: 'rgba(0,0,0,0.18)', offsetY: 2 })
-
-            Column({ space: 2 }) {
-              Text('CoachPal')
-                .fontSize(20)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(Color.White)
-              Text(this.aiLabel)
-                .fontSize(12)
-                .fontColor('#E6FFFFFF')
-            }
-            .alignItems(HorizontalAlign.Start)
-            .layoutWeight(1)
-
-            Text(this.aiOk ? '✓' : '!')
-              .fontSize(14)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(Color.White)
-              .width(24)
-              .height(24)
-              .textAlign(TextAlign.Center)
-              .borderRadius(12)
-              .backgroundColor(this.aiOk ? $r('app.color.status_good') : $r('app.color.status_warn'))
-          }
-          .width('100%')
-        }
-        .padding(18)
-        .borderRadius(16)
-        .linearGradient({
-          angle: 135,
-          colors: [[$r('app.color.primary'), 0], [$r('app.color.accent'), 1]],
-        })
-        .shadow({ radius: 10, color: 'rgba(235,104,52,0.30)', offsetY: 3 })
-
         // 数据速览
         if (this.stats !== null) {
           CardContainer() {
@@ -389,6 +412,20 @@ export struct ProfilePage {
             this.menuRow($r('sys.symbol.download'), '导出数据',
               '全部数据导出为 JSON 备份', (): void => {
                 this.exportData();
+              })
+            Divider()
+              .color($r('app.color.divider'))
+              .margin({ left: 62 })
+            this.menuRow($r('sys.symbol.folder'), '导入数据',
+              '从 JSON 备份恢复（覆盖现有数据）', (): void => {
+                this.importData();
+              })
+            Divider()
+              .color($r('app.color.divider'))
+              .margin({ left: 62 })
+            this.menuRow($r('sys.symbol.info_circle'), '关于',
+              `版本 · 数据来源`, (): void => {
+                this.showAbout();
               })
           }
         }

@@ -3,6 +3,18 @@
 
 import { FoodHit } from '../domain/food_search';
 
+/** 备份导出/导入的数据结构（restoreFromBackup 的载荷）。 */
+export interface RestorePayload {
+  exportedAt: string;
+  profile: ProfileRow | null;
+  bodyMetrics: BodyMetricRow[];
+  measurements: MeasurementRow[];
+  goals: GoalRow[];
+  strengthLogs: StrengthLogRow[];
+  meals: MealEntry[];
+  workouts: WorkoutEntry[];
+}
+
 export interface ProfileRow {
   id: number;
   sex: string;
