@@ -22,10 +22,11 @@ struct Index {
   }
 
   @Builder
-  navItem(emoji: string, label: string, index: number) {
+  navItem(icon: Resource, label: string, index: number) {
     Column({ space: 2 }) {
-      Text(emoji)
+      SymbolGlyph(icon)
         .fontSize(22)
+        .fontColor([this.currentTab === index ? $r('app.color.accent') : $r('app.color.text_secondary')])
       Text(label)
         .fontSize(11)
         .fontColor(this.currentTab === index ? $r('app.color.accent') : $r('app.color.text_secondary'))
@@ -96,17 +97,13 @@ struct Index {
       .layoutWeight(1)
 
       Row() {
-        this.navItem('🏃', '身体', 0)
+        this.navItem($r('sys.symbol.figure_walk'), '身体', 0)
         this.coachItem()
-        this.navItem('👤', '我的', 2)
+        this.navItem($r('sys.symbol.person_crop_circle_fill'), '我的', 2)
       }
       .width('100%')
       .height(72)
-      .backgroundColor($r('app.color.card'))
-      .border({
-        width: { top: 1 },
-        color: { top: $r('app.color.divider') },
-      })
+      .backgroundColor(Color.Transparent)
       .alignItems(VerticalAlign.Top)
     }
     .backgroundColor($r('app.color.bg'))
