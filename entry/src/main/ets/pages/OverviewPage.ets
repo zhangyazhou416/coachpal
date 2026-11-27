@@ -1,6 +1,7 @@
-import { BodyMetricRow, WorkoutEntry, ProfileRow } from '../core/repo/Model';
+import { BodyMetricRow, WorkoutEntry, ProfileRow, MealEntry } from '../core/repo/Model';
+import { todayIso } from '../core/util/Time';
 import { AppServices } from '../core/services';
-import { estimate1rm, calcBmi } from '../core/domain/calc';
+import { estimate1rm, calcBmi, computeTargets, Targets } from '../core/domain/calc';
 import { CardContainer, SectionTitle, fmtKg } from '../components/Common';
 
 interface PrItem {
@@ -26,12 +27,22 @@ interface WeekSummary {
   volumeKg: number;
 }
 
+interface TodayIntake {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  itemCount: number;
+}
+
 /// 概览页（纯展示）：身体素质快照 + 力量最大重量 + 近期摘要。记录统一由教练对话完成。
 @ComponentV2
 export struct OverviewPage {
   @Local snapshot: BodySnapshot | null = null;
   @Local prs: PrItem[] = [];
   @Local week: WeekSummary | null = null;
+  @Local targets: Targets | null = null;
+  @Local today: TodayIntake | null = null;
   private subId: number = -1;
 
   aboutToAppear(): void {
@@ -84,6 +95,47 @@ export struct OverviewPage {
     } else {
       this.snapshot = null;
     }
+    // 每日目标 + 今日摄入
+    if (profile !== null && metrics.length > 0 && metrics[0].weightKg !== null
+      && profile.heightCm !== null && profile.heightCm > 0) {
+      const birth = profile.birthDate;
+      let age: number | null = null;
+      if (birth !== null && birth.length >= 4) {
+        const y = Number(birth.substring(0, 4));
+        if (!Number.isNaN(y)) {
+          age = new Date().getFullYear() - y;
+        }
+      }
+      this.targets = computeTargets(profile.sex, age, profile.heightCm,
+        metrics[0].weightKg, profile.activityLevel, profile.goalType);
+    } else {
+      this.targets = null;
+    }
+    const todayMeals: MealEntry[] = await repo.listMeals(todayIso());
+    if (todayMeals.length > 0) {
+      let tk = 0;
+      let tp = 0;
+      let tf = 0;
+      let tc = 0;
+      let items = 0;
+      for (const m of todayMeals) {
+        for (const it of m.items) {
+          tk += it.kcal;
+          tp += it.protein;
+          tf += it.fat;
+          tc += it.carbs;
+          items++;
+        }
+      }
+      const t: TodayIntake = {
+        kcal: Math.round(tk), protein: Math.round(tp),
+        fat: Math.round(tf), carbs: Math.round(tc), itemCount: items,
+      };
+      this.today = t;
+    } else {
+      this.today = null;
+    }
+
     // 力量最大重量：按动作聚合（最大重量 + 估算 1RM）
     const workouts: WorkoutEntry[] = await repo.listWorkouts(3650);
     const byLift = new Map<string, PrItem>();
@@ -175,9 +227,85 @@ export struct OverviewPage {
     .alignItems(HorizontalAlign.Center)
   }
 
+  @Builder
+  macroCell(label: string, actual: number, target: number, color: ResourceColor) {
+    Column({ space: 4 }) {
+      Text(label)
+        .fontSize(11)
+        .fontColor($r('app.color.text_secondary'))
+      Text(`${Math.round(actual)}/${target}g`)
+        .fontSize(13)
+        .fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
+      Progress({ value: Math.min(Math.round(actual), target), total: target })
+        .width('100%')
+        .height(4)
+        .color(color)
+        .backgroundColor($r('app.color.divider'))
+    }
+    .layoutWeight(1)
+    .alignItems(HorizontalAlign.Center)
+  }
+
+  @Builder
+  intakeCard() {
+    CardContainer() {
+      Column({ space: 10 }) {
+        SectionTitle({ text: '今日摄入' })
+        if (this.targets === null) {
+          Text('先完善档案并记录一次体重，即可生成每日摄入目标（热量 + 蛋白/脂肪/碳水）')
+            .fontSize(13)
+            .fontColor($r('app.color.text_secondary'))
+            .width('100%')
+        } else if (this.today === null) {
+          Text(`每日目标 ${this.targets.kcal} kcal（蛋白 ${this.targets.protein}g / 脂肪 ${this.targets.fat}g / 碳水 ${this.targets.carbs}g）`)
+            .fontSize(13)
+            .fontColor($r('app.color.text_primary'))
+            .width('100%')
+          Text('今天还没记录饮食，跟教练说一句「午饭吃了…」即可记录')
+            .fontSize(12)
+            .fontColor($r('app.color.text_secondary'))
+            .width('100%')
+        } else {
+          Row() {
+            Text('已摄入')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+            Blank()
+            Text(`${this.today.kcal} / ${this.targets.kcal} kcal`)
+              .fontSize(15)
+              .fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.accent'))
+          }
+          .width('100%')
+          Progress({ value: Math.min(this.today.kcal, this.targets.kcal), total: this.targets.kcal })
+            .width('100%')
+            .height(6)
+            .color($r('app.color.accent'))
+            .backgroundColor($r('app.color.divider'))
+          Text(`剩余 ${Math.max(0, this.targets.kcal - this.today.kcal)} kcal（已记录 ${this.today.itemCount} 项）`)
+            .fontSize(11)
+            .fontColor($r('app.color.text_secondary'))
+            .width('100%')
+          Row({ space: 8 }) {
+            this.macroCell('蛋白', this.today.protein, this.targets.protein, $r('app.color.primary'))
+            this.macroCell('脂肪', this.today.fat, this.targets.fat, $r('app.color.series4'))
+            this.macroCell('碳水', this.today.carbs, this.targets.carbs, $r('app.color.series3'))
+          }
+          .width('100%')
+        }
+      }
+      .alignItems(HorizontalAlign.Start)
+      .width('100%')
+    }
+  }
+
   build() {
     Scroll() {
       Column({ space: 12 }) {
+        // ---- 今日摄入 ----
+        this.intakeCard()
+
         // ---- 身体素质 ----
         CardContainer() {
           Column({ space: 12 }) {

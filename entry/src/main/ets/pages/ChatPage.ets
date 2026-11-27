@@ -37,7 +37,9 @@ const COACH_TOOLS_PROMPT: string =
   + '· set_goal(kind, target, target_date?)：设置目标体重/体脂率/骨骼肌量（kind: weight/body_fat/muscle）。'
   + '用户说「目标体重 72kg」等时调用；设置后先调用 get_recent_summary，再结合现状给出'
   + '达成目标的训练方案（频率、动作选择、组次、进阶与恢复）与饮食要点。\n'
-  + '规则：用户给出记录类信息时，主动调用对应工具落库并简要确认；'
+  + '规则：用户报告体重时，先 record_body_metric 落库，再调用 get_daily_targets 刷新每日目标，'
+  + '并用一两句话把最新的每日热量与蛋白/脂肪/碳水目标告诉用户；'
+  + '用户给出记录类信息时，主动调用对应工具落库并简要确认；'
   + '需要用户数据支撑的建议，先调用 get_recent_summary 再回答；'
   + '饮食/摄入相关问题先调 get_daily_targets 或 get_diet_status 拿数据再解读；'
   + '制定训练/饮食计划时输出结构化、可执行的方案；不要虚构数据，工具返回未找到时如实告知。';
