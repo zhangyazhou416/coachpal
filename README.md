@@ -11,15 +11,15 @@
 
 ## 界面预览
 
-| 教练对话 | 问答示例 |
+| 教练问答 | 问答示例 |
 | --- | --- |
-| <img src="docs/screenshots/chat.jpeg" width="270"/> | <img src="docs/screenshots/qa.jpeg" width="270"/> |
+| <img src="docs/screenshots/chat-qa.jpeg?v=2" width="270"/> | <img src="docs/screenshots/qa.jpeg?v=2" width="270"/> |
 | **身体概览** | **趋势** |
-| <img src="docs/screenshots/overview.jpeg" width="270"/> | <img src="docs/screenshots/trends.jpeg" width="270"/> |
+| <img src="docs/screenshots/overview.jpeg?v=2" width="270"/> | <img src="docs/screenshots/trends.jpeg?v=2" width="270"/> |
 | **我的** | **AI 服务** |
-| <img src="docs/screenshots/profile.jpeg" width="270"/> | <img src="docs/screenshots/ai-config.jpeg" width="270"/> |
-| **个人档案** | |
-| <img src="docs/screenshots/profile-edit.jpeg" width="270"/> | |
+| <img src="docs/screenshots/profile.jpeg?v=2" width="270"/> | <img src="docs/screenshots/ai-config.jpeg?v=2" width="270"/> |
+| **个人档案** | **欢迎卡** |
+| <img src="docs/screenshots/profile-edit.jpeg?v=2" width="270"/> | <img src="docs/screenshots/chat.jpeg?v=2" width="270"/> |
 
 ## 快速开始
 
