@@ -30,8 +30,16 @@ const COACH_TOOLS_PROMPT: string =
   + '· record_body_metric(weight_kg?, body_fat_pct?, skeletal_muscle_kg?, date?)：记录身体数据。\n'
   + '· record_workout(sets, name?, date?)：记录一次训练，每组含 exercise、weight_kg、reps、rpe?。\n'
   + '· get_recent_summary()：获取用户近期身体/饮食/训练概况。\n'
+  + '· get_daily_targets()：按档案与最新体重计算每日摄入目标（热量 + 蛋白/脂肪/碳水/纤维）。'
+  + '用户问「每天该吃多少、摄入目标、宏量怎么分配、增肌/减脂该怎么吃」时调用，并据此给出饮食建议。\n'
+  + '· get_diet_status()：今日已摄入 vs 每日目标的对比（剩余热量/余量/供能占比与参考区间）。'
+  + '用户问「今天还需要吃多少、吃得够不够、饮食结构合不合理」时调用，并解读结果给出调整建议。\n'
+  + '· set_goal(kind, target, target_date?)：设置目标体重/体脂率/骨骼肌量（kind: weight/body_fat/muscle）。'
+  + '用户说「目标体重 72kg」等时调用；设置后先调用 get_recent_summary，再结合现状给出'
+  + '达成目标的训练方案（频率、动作选择、组次、进阶与恢复）与饮食要点。\n'
   + '规则：用户给出记录类信息时，主动调用对应工具落库并简要确认；'
   + '需要用户数据支撑的建议，先调用 get_recent_summary 再回答；'
+  + '饮食/摄入相关问题先调 get_daily_targets 或 get_diet_status 拿数据再解读；'
   + '制定训练/饮食计划时输出结构化、可执行的方案；不要虚构数据，工具返回未找到时如实告知。';
 
 const DEVICE_MODEL_ERROR: Record<string, string> = {

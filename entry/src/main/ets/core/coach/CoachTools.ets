@@ -4,6 +4,7 @@ import {
   ExerciseRow, CustomItemInput, BodyMetricRow, WorkoutEntry, StrengthLogRow, decodeList,
 } from '../repo/Model';
 import { ParsedSet, CATEGORY_ZH, EQUIPMENT_ZH, MUSCLE_ZH } from '../domain/set_parser';
+import { computeTargets, Targets } from '../domain/calc';
 import { ExerciseSkill } from './ExerciseSkill';
 import { MEAL_TYPES, mealLabel } from '../../components/Common';
 import { todayIso, dateDaysAgo } from '../util/Time';
@@ -16,6 +17,7 @@ export interface JsonSchema {
   properties: Record<string, JsonSchema>;
   required?: string[];
   items?: JsonSchema;
+  enum?: string[];
 }
 
 export interface OpenAiToolDef {
@@ -129,6 +131,34 @@ const SUMMARY_SCHEMA: JsonSchema = {
   required: [],
 };
 
+const TARGETS_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {},
+  required: [],
+};
+
+const DIET_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {},
+  required: [],
+};
+
+const GOAL_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    'kind': {
+      type: 'string',
+      description: '目标类型',
+      properties: {},
+      required: [],
+      enum: ['weight', 'body_fat', 'muscle'],
+    },
+    'target': strSchema('目标数值：体重 kg / 体脂率 % / 骨骼肌 kg'),
+    'target_date': strSchema('目标达成日期 YYYY-MM-DD，可选'),
+  },
+  required: ['kind', 'target'],
+};
+
 const COACH_TOOL_SPECS: CoachToolSpec[] = [
   {
     name: 'get_exercise',
@@ -159,6 +189,21 @@ const COACH_TOOL_SPECS: CoachToolSpec[] = [
     name: 'get_recent_summary',
     description: '获取用户近期概况：最新身体数据、近 7 天饮食热量、近期训练与力量 PR。给建议前调用以了解用户现状。',
     schema: SUMMARY_SCHEMA,
+  },
+  {
+    name: 'get_daily_targets',
+    description: '根据档案（性别/年龄/身高/活动水平/目标）与最新体重计算每日摄入目标：热量、蛋白质、脂肪、碳水、纤维。用户问「每天该吃多少/摄入目标是多少/宏量怎么分配」时调用。',
+    schema: TARGETS_SCHEMA,
+  },
+  {
+    name: 'get_diet_status',
+    description: '今日已摄入 vs 每日目标对比：剩余热量与各营养素余量、三大营养素供能占比（附参考区间）。用户问「今天还需要吃多少/吃得够不够/饮食结构是否合理」时调用。',
+    schema: DIET_SCHEMA,
+  },
+  {
+    name: 'set_goal',
+    description: '设置目标：目标体重 kg / 体脂率 % / 骨骼肌量 kg。用户说「目标体重 72kg」「减脂到 15%」等时调用；设置后结合 get_recent_summary 给出训练方案建议。',
+    schema: GOAL_SCHEMA,
   },
 ];
 
@@ -201,11 +246,19 @@ interface RawArgs {
   body_fat_pct?: number;
   skeletal_muscle_kg?: number;
   date?: string;
+  kind?: string;
+  target?: number;
+  target_date?: string;
   name?: string;
   sets?: RawWorkoutSet[];
 }
 
 // ------------------------------------------------------- 执行结果
+
+interface TargetsPair {
+  t: Targets | null;
+  hint: string;
+}
 
 export class ToolOutcome {
   /** 给模型看的工具结果文本。 */
@@ -271,6 +324,15 @@ export class CoachTools {
       }
       if (name === 'get_recent_summary') {
         return await CoachTools.recentSummary(repo);
+      }
+      if (name === 'get_daily_targets') {
+        return await CoachTools.dailyTargets(repo);
+      }
+      if (name === 'get_diet_status') {
+        return await CoachTools.dietStatus(repo);
+      }
+      if (name === 'set_goal') {
+        return await CoachTools.setGoal(repo, raw);
       }
       return new ToolOutcome(`未知工具：${name}`, null, null);
     } catch (e) {
@@ -418,6 +480,169 @@ export class CoachTools {
       `已记录训练「${name ?? '未命名'}」：${entry.sets.length} 组，总训练量 ${volume.toFixed(0)} kg`,
       `✅ 已记录训练：${entry.sets.length} 组 · 总量 ${volume.toFixed(0)} kg`,
       null);
+  }
+
+
+  private static ageFromBirth(birth: string | null): number | null {
+    if (birth === null || birth.length < 10) {
+      return null;
+    }
+    const y = Number(birth.substring(0, 4));
+    const m = Number(birth.substring(5, 7));
+    if (Number.isNaN(y) || Number.isNaN(m)) {
+      return null;
+    }
+    const now = new Date();
+    let age = now.getFullYear() - y;
+    if (now.getMonth() + 1 < m) {
+      age--;
+    }
+    return age;
+  }
+
+  private static goalTypeLabel(t: string): string {
+    if (t === 'cut') {
+      return '减脂';
+    }
+    if (t === 'bulk') {
+      return '增肌';
+    }
+    return '维持';
+  }
+
+  /** 档案 + 最新体重 → 每日摄入目标。null 表示资料不足。 */
+  private static async computeUserTargets(repo: Repo): Promise<TargetsPair> {
+    const profile = await repo.getProfile();
+    const metrics = await repo.listMetrics();
+    const weight = metrics.length > 0 ? metrics[0].weightKg : null;
+    const t = computeTargets(
+      profile === null ? null : profile.sex,
+      CoachTools.ageFromBirth(profile === null ? null : profile.birthDate),
+      profile === null ? null : profile.heightCm,
+      weight,
+      profile === null ? 'moderate' : profile.activityLevel,
+      profile === null ? 'maintain' : profile.goalType,
+    );
+    let hint = '';
+    if (t === null) {
+      const missing: string[] = [];
+      if (profile === null) {
+        missing.push('档案（性别/年龄/身高/活动水平/目标）');
+      } else {
+        if (profile.heightCm === null) {
+          missing.push('身高');
+        }
+      }
+      if (weight === null) {
+        missing.push('体重');
+      }
+      hint = `还缺少：${missing.join('、')}。请用户直接告诉教练这些信息。`;
+    }
+    const out: TargetsPair = { t: t, hint: hint };
+    return out;
+  }
+
+  private static async dailyTargets(repo: Repo): Promise<ToolOutcome> {
+    const pair = await CoachTools.computeUserTargets(repo);
+    if (pair.t === null) {
+      return new ToolOutcome(pair.hint, null, null);
+    }
+    const t = pair.t;
+    const profile = await repo.getProfile();
+    const goalText = profile === null ? '维持' : CoachTools.goalTypeLabel(profile.goalType);
+    const lines: string[] = [
+      `目标类型：${goalText}`,
+      `BMR ${t.bmr} kcal · TDEE ${t.tdee} kcal`,
+      `每日摄入目标：${t.kcal} kcal`,
+      `蛋白质 ${t.protein}g · 脂肪 ${t.fat}g · 碳水 ${t.carbs}g · 纤维 ${t.fiber}g`,
+    ];
+    if (t.clamped) {
+      lines.push('（热量已按安全下限抬高）');
+    }
+    lines.push('请基于以上数值给用户解释每日应摄入多少热量与三大营养素。');
+    return new ToolOutcome(lines.join('\n'), null, null);
+  }
+
+  private static async dietStatus(repo: Repo): Promise<ToolOutcome> {
+    const pair = await CoachTools.computeUserTargets(repo);
+    if (pair.t === null) {
+      return new ToolOutcome(pair.hint, null, null);
+    }
+    const t = pair.t;
+    const today = todayIso();
+    const meals = await repo.listMeals(today);
+    let kcal = 0;
+    let protein = 0;
+    let fat = 0;
+    let carbs = 0;
+    let itemCount = 0;
+    const mealLines: string[] = [];
+    for (const m of meals) {
+      let mk = 0;
+      for (const it of m.items) {
+        kcal += it.kcal;
+        protein += it.protein;
+        fat += it.fat;
+        carbs += it.carbs;
+        mk += it.kcal;
+        itemCount++;
+      }
+      mealLines.push(`${mealLabel(m.meal.mealType)}（${m.meal.date}）：约 ${Math.round(mk)} kcal`);
+    }
+    const rK = Math.round(t.kcal - kcal);
+    const rP = Math.round(t.protein - protein);
+    const rF = Math.round(t.fat - fat);
+    const rC = Math.round(t.carbs - carbs);
+    const lines: string[] = [
+      `每日目标：${t.kcal} kcal（蛋白 ${t.protein}g / 脂肪 ${t.fat}g / 碳水 ${t.carbs}g）`,
+      meals.length > 0
+        ? `今日已摄入（${today}）：${Math.round(kcal)} kcal（蛋白 ${Math.round(protein)}g / 脂肪 ${Math.round(fat)}g / 碳水 ${Math.round(carbs)}g），${meals.length} 餐共 ${itemCount} 项`
+        : `今日（${today}）还没有饮食记录`,
+      `剩余：热量 ${rK} kcal · 蛋白 ${rP}g · 脂肪 ${rF}g · 碳水 ${rC}g`,
+    ];
+    if (mealLines.length > 0) {
+      lines.push(`今日明细：\n${mealLines.join('\n')}`);
+    }
+    const macroKcal = protein * 4 + fat * 9 + carbs * 4;
+    if (macroKcal > 0) {
+      const pp = Math.round(protein * 4 / macroKcal * 100);
+      const ff = Math.round(fat * 9 / macroKcal * 100);
+      const cc = 100 - pp - ff;
+      lines.push(`三大营养素供能占比：蛋白 ${pp}% / 脂肪 ${ff}% / 碳水 ${cc}%（一般参考：蛋白 10-20%、脂肪 20-30%、碳水 50-60%）`);
+    }
+    lines.push('请对比目标与实际，指出剩余量、结构是否合理并给出调整建议。');
+    return new ToolOutcome(lines.join('\n'), null, null);
+  }
+
+  private static async setGoal(repo: Repo, raw: RawArgs): Promise<ToolOutcome> {
+    const kind = (raw.kind ?? '').trim();
+    if (kind !== 'weight' && kind !== 'body_fat' && kind !== 'muscle') {
+      return new ToolOutcome('kind 只支持 weight / body_fat / muscle', null, null);
+    }
+    const target = raw.target;
+    if (target === undefined || target === null || target <= 0) {
+      return new ToolOutcome('缺少有效的 target 数值', null, null);
+    }
+    const date = typeof raw.target_date === 'string' && raw.target_date.length === 10
+      ? raw.target_date : null;
+    await repo.addGoal(kind, target, date);
+    const kindLabel = kind === 'weight' ? '体重' : (kind === 'body_fat' ? '体脂率' : '骨骼肌量');
+    const unit = kind === 'body_fat' ? '%' : 'kg';
+    const metrics = await repo.listMetrics();
+    let current = '未知';
+    if (metrics.length > 0) {
+      const w = metrics[0].weightKg;
+      const bf = metrics[0].bodyFatPct;
+      const mu = metrics[0].skeletalMuscleKg;
+      const v = kind === 'weight' ? w : (kind === 'body_fat' ? bf : mu);
+      if (v !== null) {
+        current = `${v}${unit}`;
+      }
+    }
+    const note = `🎯 目标已设置：${kindLabel} → ${target}${unit}${date === null ? '' : `（${date} 前）`}，当前 ${current}`;
+    const forModel = `目标已保存：${kindLabel} → ${target}${unit}（当前 ${current}）。` +
+      '请调用 get_recent_summary 了解现状后，给出达成该目标的训练方案（频率/动作/组次/进阶）与饮食要点。';
+    return new ToolOutcome(forModel, note, null);
   }
 
   private static async recentSummary(repo: Repo): Promise<ToolOutcome> {
