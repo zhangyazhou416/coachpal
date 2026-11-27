@@ -91,6 +91,7 @@ interface ApiMsg {
   content: string | null;
   tool_calls?: ToolCallJson[];
   tool_call_id?: string;
+  reasoning_content?: string | null;
 }
 
 interface ChatCompletionRequest {
@@ -104,6 +105,7 @@ interface AssistantMsgJson {
   role?: string;
   content?: string | null;
   tool_calls?: ToolCallJson[];
+  reasoning_content?: string | null;
 }
 
 interface ChoiceJson {
@@ -341,8 +343,10 @@ export struct ChatPage {
         tools: OPENAI_TOOLS,
         tool_choice: 'auto',
       };
+      console.info(`[CoachPal] oai round=${round} lastMsg=${JSON.stringify(msgs[msgs.length - 1]).substring(0, 400)}`);
       const resp = await Http.postJson(endpoint, req, apiKey, 90000);
       if (resp.status !== 200) {
+        console.info(`[CoachPal] oai round=${round} HTTP ${resp.status}: ${resp.body.substring(0, 300)}`);
         throw new Error(this.customError(resp, endpoint));
       }
       const data = JSON.parse(resp.body) as CompletionJson;
@@ -354,6 +358,7 @@ export struct ChatPage {
       if (msg === undefined) {
         throw new Error('模型接口未返回结果');
       }
+      console.info(`[CoachPal] oai round=${round} resp content=${msg.content === null ? 'null' : (msg.content ?? '').substring(0, 80)} rc=${msg.reasoning_content === undefined ? 'undef' : (msg.reasoning_content ?? 'null').substring(0, 60)} tc=${(msg.tool_calls ?? []).length}`);
       const calls = msg.tool_calls ?? [];
       if (calls.length === 0) {
         return msg.content ?? '（无回复）';
@@ -362,6 +367,8 @@ export struct ChatPage {
         role: 'assistant',
         content: msg.content ?? null,
         tool_calls: calls,
+        // 思考模型（deepseek-reasoner/qwen thinking 等）要求把 reasoning_content 回传
+        reasoning_content: msg.reasoning_content ?? null,
       };
       msgs.push(assistantMsg);
       for (const call of calls) {
@@ -440,7 +447,7 @@ export struct ChatPage {
   }
 
   /** 自定义模型：按所选协议（OpenAI / Anthropic 兼容）直连，支持 Function Calling。 */
-  private async askCustomModel(question: string): Promise<string> {
+  private async askCustomModel(question: string, frozenHistory: ApiMsg[]): Promise<string> {
     const svc = AppServices.getInstance();
     const repo = svc.repo;
     if (repo === null) {
@@ -453,7 +460,7 @@ export struct ChatPage {
     if (baseUrl.length === 0 || model.length === 0 || apiKey === null || apiKey.length === 0) {
       throw new Error('自定义模型未配置完整，请到「我的 → AI 服务」检查');
     }
-    const history = this.recentHistory();
+    const history = frozenHistory;
     if (protocol === LlmProtocol.ANTHROPIC) {
       return this.anthropicLoop(repo, baseUrl, model, apiKey, history);
     }
@@ -483,6 +490,9 @@ export struct ChatPage {
     this.sending = true;
     this.pendingExercise = null;
     this.scrollDown();
+    // 冻结发给模型的历史：必须在插入本地动作讲解（assistant 消息）之前，
+    // 否则请求以 assistant 结尾，思考模型会要求回传 reasoning_content 而 400
+    const frozenHistory: ApiMsg[] = this.recentHistory();
     // 动作技能即时响应：端侧模型来源时命中本地动作库立刻出讲解 + GIF 卡片，不等待模型
     const repo = svc.repo;
     const source = await svc.settings.getAiSource();
@@ -499,7 +509,7 @@ export struct ChatPage {
     try {
       let answer = '';
       if (source === AiSource.CUSTOM) {
-        answer = await this.askCustomModel(text);
+        answer = await this.askCustomModel(text, frozenHistory);
       } else {
         answer = await this.askDeviceModel(text);
       }
