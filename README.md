@@ -11,13 +11,15 @@
 
 ## 界面预览
 
-| 教练对话 | 身体概览 |
+| 教练对话 | 问答示例 |
 | --- | --- |
-| <img src="docs/screenshots/chat.jpeg" width="270"/> | <img src="docs/screenshots/overview.jpeg" width="270"/> |
-| **趋势** | **我的** |
-| <img src="docs/screenshots/trends.jpeg" width="270"/> | <img src="docs/screenshots/profile.jpeg" width="270"/> |
-| **AI 服务** | **个人档案** |
-| <img src="docs/screenshots/ai-config.jpeg" width="270"/> | <img src="docs/screenshots/profile-edit.jpeg" width="270"/> |
+| <img src="docs/screenshots/chat.jpeg" width="270"/> | <img src="docs/screenshots/qa.jpeg" width="270"/> |
+| **身体概览** | **趋势** |
+| <img src="docs/screenshots/overview.jpeg" width="270"/> | <img src="docs/screenshots/trends.jpeg" width="270"/> |
+| **我的** | **AI 服务** |
+| <img src="docs/screenshots/profile.jpeg" width="270"/> | <img src="docs/screenshots/ai-config.jpeg" width="270"/> |
+| **个人档案** | |
+| <img src="docs/screenshots/profile-edit.jpeg" width="270"/> | |
 
 ## 快速开始
 
