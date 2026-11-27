@@ -157,7 +157,6 @@ export struct MdText {
               }
             }, (row: string, ri: number) => `${ri}_${row.substring(0, 20)}`)
           }
-          .width('100%')
           .margin({ top: 2, bottom: 2 })
         } else {
           ForEach(b.lines, (line: string) => {
@@ -178,6 +177,6 @@ export struct MdText {
       }, (b: MdBlock, bi: number) => `${bi}_${b.kind}_${b.lines.join(' ').substring(0, 20)}`)
     }
     .alignItems(HorizontalAlign.Start)
-    .width('100%')
+    .constraintSize({ maxWidth: '100%' })
   }
 }
