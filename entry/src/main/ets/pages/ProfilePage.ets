@@ -241,6 +241,63 @@ export struct ProfilePage {
     }
   }
 
+  /** 清空数据：两步确认（警告 → 最终确认），避免误触。 */
+  private confirmClearData(): void {
+    this.getUIContext().showAlertDialog({
+      title: '清空本地数据',
+      message: '将删除本机全部记录：档案、体重体脂、围度、目标、饮食、训练、力量记录与对话历史。\n\n'
+        + '食物库与动作库会保留。此操作不可恢复，建议先「导出数据」备份。',
+      autoCancel: true,
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '取消', action: (): void => {
+        }
+      },
+      secondaryButton: {
+        value: '继续', fontColor: $r('app.color.status_bad'),
+        action: (): void => {
+          // 前一个 dialog 尚未销毁时立即弹新的会被丢弃，延迟一拍
+          setTimeout((): void => {
+            this.finalConfirmClear();
+          }, 350);
+        }
+      },
+    });
+  }
+
+  private finalConfirmClear(): void {
+    this.getUIContext().showAlertDialog({
+      title: '确认删除？',
+      message: '所有记录将被永久删除，无法找回。',
+      autoCancel: true,
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '取消', action: (): void => {
+        }
+      },
+      secondaryButton: {
+        value: '确认删除', fontColor: $r('app.color.status_bad'),
+        action: (): void => {
+          this.doClearData();
+        }
+      },
+    });
+  }
+
+  private async doClearData(): Promise<void> {
+    const repo = AppServices.getInstance().repo;
+    if (repo === null) {
+      return;
+    }
+    try {
+      await repo.clearAllData();
+      this.toast('本地数据已清空');
+      await this.refresh();
+    } catch (e) {
+      this.toast('清空失败：' + (e as Error).message);
+    }
+  }
+
   private showAbout(): void {
     this.getUIContext().showAlertDialog({
       title: `关于 CoachPal`,
@@ -420,6 +477,13 @@ export struct ProfilePage {
             this.menuRow($r('sys.symbol.folder'), '导入数据',
               '从 JSON 备份恢复（覆盖现有数据）', (): void => {
                 this.importData();
+              })
+            Divider()
+              .color($r('app.color.divider'))
+              .margin({ left: 62 })
+            this.menuRow($r('sys.symbol.trash'), '清空数据',
+              '删除本机全部记录（不可恢复）', (): void => {
+                this.confirmClearData();
               })
             Divider()
               .color($r('app.color.divider'))

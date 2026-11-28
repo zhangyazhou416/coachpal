@@ -308,6 +308,21 @@ export class Repo {
     return this.db.count(table);
   }
 
+  /** 清空全部本地业务数据（保留参考数据 foods/exercises 与设置）。 */
+  async clearAllData(): Promise<void> {
+    await this.db.tx(async (): Promise<void> => {
+      const tables: string[] = ['body_metrics', 'measurements', 'goals', 'strength_logs',
+        'meals', 'meal_items', 'workouts', 'workout_sets', 'chat_messages'];
+      for (const t of tables) {
+        await this.db.exec(`DELETE FROM ${t}`);
+      }
+      await this.db.exec('DELETE FROM profile');
+      await this.db.exec('INSERT OR IGNORE INTO profile (id, sex, activity_level, goal_type, updated_at) ' +
+        "VALUES (1, 'male', 'moderate', 'maintain', ?)", [nowUtc()]);
+    });
+    this.invalidateCaches();
+  }
+
   /** 用备份恢复全部业务数据：清空后整批重插（单事务，失败回滚）。 */
   async restoreFromBackup(payload: RestorePayload): Promise<void> {
     await this.db.tx(async (): Promise<void> => {
