@@ -230,6 +230,42 @@ export struct ChatPage {
     this.checked = true;
   }
 
+  /** 清空对话：确认后删库并只保留欢迎卡。 */
+  private confirmClearChat(): void {
+    this.getUIContext().showAlertDialog({
+      title: '清空对话',
+      message: '将删除本机保存的全部教练对话记录，无法恢复。\n\n（体重、饮食、训练等记录不受影响）',
+      autoCancel: true,
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '取消', action: (): void => {
+        }
+      },
+      secondaryButton: {
+        value: '清空', fontColor: $r('app.color.status_bad'),
+        action: (): void => {
+          this.doClearChat();
+        }
+      },
+    });
+  }
+
+  private async doClearChat(): Promise<void> {
+    const store = AppServices.getInstance().chatStore;
+    if (store === null) {
+      return;
+    }
+    try {
+      await store.clear();
+      this.messages = [greeting()];
+      this.getUIContext().getPromptAction().showToast({ message: '对话已清空', duration: 2000 });
+    } catch (e) {
+      this.getUIContext().getPromptAction().showToast({
+        message: '清空失败：' + (e as Error).message, duration: 2500,
+      });
+    }
+  }
+
   private scrollDown(): void {
     setTimeout((): void => {
       this.scroller.scrollEdge(Edge.Bottom);
@@ -768,6 +804,28 @@ export struct ChatPage {
       this.setupHint()
     } else {
       Column() {
+        // 顶部工具条：仅在有对话时显示「清空对话」
+        if (this.messages.length > 1) {
+          Row() {
+            Blank()
+            Row({ space: 4 }) {
+              SymbolGlyph($r('sys.symbol.trash'))
+                .fontSize(13)
+                .fontColor([$r('app.color.text_secondary')])
+              Text('清空对话')
+                .fontSize(12)
+                .fontColor($r('app.color.text_secondary'))
+            }
+            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+            .borderRadius(14)
+            .backgroundColor($r('app.color.card'))
+            .onClick((): void => {
+              this.confirmClearChat();
+            })
+          }
+          .width('100%')
+          .padding({ left: 12, right: 12, top: 6 })
+        }
         List({ scroller: this.scroller, space: 4 }) {
           ForEach(this.messages, (m: ChatMsg, idx: number) => {
             ListItem() {
