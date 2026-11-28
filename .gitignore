@@ -28,3 +28,7 @@ local.properties
 *.cer
 *.p7b
 oh-package-lock.json5
+
+# 调试数据库副本
+*.db
+*.db-wal
