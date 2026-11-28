@@ -3,6 +3,7 @@ import { Db } from './db/Db';
 import { ChangeBus } from './db/ChangeBus';
 import { Seed } from './db/Seed';
 import { Repo } from './repo/Repo';
+import { ChatStore } from './repo/ChatStore';
 import { Settings } from './settings/Settings';
 
 /** 全局服务单例：EntryAbility.onCreate 里 init（不阻塞），页面 await whenReady() 后取 db/repo。 */
@@ -13,6 +14,7 @@ export class AppServices {
   readonly settings: Settings = new Settings();
   db: Db | null = null;
   repo: Repo | null = null;
+  chatStore: ChatStore | null = null;
   private ctx: common.Context | null = null;
   private readyPromise: Promise<void> | null = null;
 
@@ -50,6 +52,7 @@ export class AppServices {
     this.db = db;
     const repo = new Repo(db, this.bus);
     this.repo = repo;
+    this.chatStore = new ChatStore(db);
     await this.settings.init(ctx);
     // 参考数据后台导入，完成后清 repo 缓存；失败不阻塞应用
     new Seed(db, ctx).run()

@@ -7,6 +7,7 @@
     { "name": "text_primary", "value": "#E6000000" },
     { "name": "text_secondary", "value": "#99000000" },
     { "name": "divider", "value": "#14000000" },
+{ "name": "table_bg", "value": "#F4F4F1" },
     { "name": "primary", "value": "#2A78D6" },
     { "name": "accent", "value": "#EB6834" },
     { "name": "series3", "value": "#1BAF7A" },

@@ -17,6 +17,7 @@ node_modules/
 .cache/
 .preview/
 .hvigor/
+.deveco
 .hvigor-deps/
 .test/
 .cxx/

@@ -1,5 +1,6 @@
 /** 轻量 Markdown 渲染：加粗 / 行内代码 / # 标题 / --- 分割线 / GFM 表格 / 空行。
  *  覆盖模型回复的常见格式，不追求完整规范。 */
+import { MeasureText } from '@kit.ArkUI';
 
 interface MdSeg {
   text: string;
@@ -119,26 +120,56 @@ export struct MdText {
     return lines.filter((l: string): boolean => !this.isSepRow(l));
   }
 
-  /** 每列按最大内容长度分配宽度权重（窄列短、长列宽），避免等宽错位。 */
-  private tableWidths(lines: string[]): number[] {
+  /** 单元格按行内样式分段实测总宽（vp）：加粗/等宽各按真实渲染样式测量，避免粗体折行。 */
+  private cellTextWidth(cell: string, fs: number, boldAll: boolean): number {
+    const parts: MdSeg[] = this.segs(cell);
+    let wpx: number = 0;
+    for (const s of parts) {
+      wpx += MeasureText.measureText({
+        textContent: s.text,
+        fontSize: fs,
+        fontWeight: boldAll || s.bold ? FontWeight.Bold : FontWeight.Normal,
+        fontFamily: s.mono ? 'monospace' : 'HarmonyOS Sans'
+      });
+    }
+    return px2vp(wpx);
+  }
+
+  /** 表格每列宽度 = 该列最大单元格内容实测宽度（夹取上限防止单格超长），配合横向滚动避免撑爆气泡。 */
+  private colWidths(lines: string[]): number[] {
     const rows: string[] = this.tableRows(lines);
     let cols: number = 1;
     for (const r of rows) {
       cols = Math.max(cols, this.cells(r).length);
     }
+    const fs: number = this.fontSize - 1;
     const w: number[] = [];
-    for (let ci: number = 0; ci < cols; ci++) {
-      let max: number = 2;
+    for (let ci = 0; ci < cols; ci++) {
+      let max: number = 0;
       for (const r of rows) {
         const cs: string[] = this.cells(r);
         if (ci < cs.length) {
-          const plain: string = cs[ci].replace(/\*\*/g, '').replace(/`/g, '');
-          max = Math.max(max, Math.min(plain.length, 16));
+          max = Math.max(max, this.cellTextWidth(cs[ci], fs, r === rows[0]));
         }
       }
-      w.push(max);
+      w.push(Math.min(Math.max(max, 24) + 8, 220));
     }
     return w;
+  }
+
+  private cellWidth(lines: string[], ci: number): number {
+    const w: number[] = this.colWidths(lines);
+    return ci >= 0 && ci < w.length ? w[ci] : 64;
+  }
+
+  /** 表格总宽（vp）= 各列宽之和，用于把表格容器钉在内容宽度上，避免被拉满气泡。 */
+  private tableWidth(lines: string[]): number {
+    const w: number[] = this.colWidths(lines);
+    let sum: number = 0;
+    for (const c of w) {
+      sum += c;
+    }
+    return sum;
   }
 
   build() {
@@ -157,33 +188,43 @@ export struct MdText {
           .fontSize(this.fontSize + 3)
           .fontColor($r('app.color.text_primary'))
           .margin({ top: 4 })
+          .wordBreak(WordBreak.BREAK_ALL)
         } else if (b.kind === 'table') {
-          Column() {
-            ForEach(b.lines.filter((l: string): boolean => !this.isSepRow(l)), (row: string, ri: number) => {
-              Row() {
-                ForEach(this.cells(row), (c: string, ci: number) => {
-                  Text() {
-                    ForEach(this.segs(c), (s: MdSeg) => {
-                      Span(s.text)
-                        .fontWeight(ri === 0 || s.bold ? FontWeight.Bold : FontWeight.Normal)
-                        .fontFamily(s.mono ? 'monospace' : 'HarmonyOS Sans')
-                        .fontSize(this.fontSize - 1)
-                        .fontColor($r('app.color.text_primary'))
-                    }, (s: MdSeg, si: number) => `${si}_${s.text}`)
-                  }
-                  .layoutWeight(1)
-                  .padding(4)
-                  .textAlign(TextAlign.Start)
-                }, (c: string, ci: number) => `${ci}_${c}`)
-              }
-              .alignItems(VerticalAlign.Center)
-              .width('100%')
-              if (ri < b.lines.length - 1) {
-                Divider().strokeWidth(0.5).color($r('app.color.divider'))
-              }
-            }, (row: string, ri: number) => `${ri}_${row.substring(0, 20)}`)
+          Scroll() {
+            Column() {
+              ForEach(this.tableRows(b.lines), (row: string, ri: number) => {
+                Row() {
+                  ForEach(this.cells(row), (c: string, ci: number) => {
+                    Text() {
+                      ForEach(this.segs(c), (s: MdSeg) => {
+                        Span(s.text)
+                          .fontWeight(ri === 0 || s.bold ? FontWeight.Bold : FontWeight.Normal)
+                          .fontFamily(s.mono ? 'monospace' : 'HarmonyOS Sans')
+                          .fontSize(this.fontSize - 1)
+                          .fontColor($r('app.color.text_primary'))
+                      }, (s: MdSeg, si: number) => `${si}_${s.text}`)
+                    }
+                    .width(this.cellWidth(b.lines, ci))
+                    .padding({ left: 4, right: 4, top: 3, bottom: 3 })
+                    .textAlign(TextAlign.Start)
+                    .wordBreak(WordBreak.BREAK_ALL)
+                  }, (c: string, ci: number) => `${ci}_${c}`)
+                }
+                .alignItems(VerticalAlign.Top)
+                if (ri === 0) {
+                  Divider().strokeWidth(0.5).color($r('app.color.divider'))
+                }
+              }, (row: string, ri: number) => `${ri}_${row.substring(0, 20)}`)
+            }
+            .width(this.tableWidth(b.lines))
+            .backgroundColor($r('app.color.table_bg'))
+            .borderRadius(8)
+            .border({ width: 1, color: $r('app.color.card_border') })
+            .clip(true)
+            .alignItems(HorizontalAlign.Start)
           }
-          .width('100%')
+          .scrollable(ScrollDirection.Horizontal)
+          .scrollBar(BarState.Auto)
           .margin({ top: 2, bottom: 2 })
         } else {
           ForEach(b.lines, (line: string) => {
@@ -199,6 +240,7 @@ export struct MdText {
             .fontSize(this.fontSize)
             .fontColor($r('app.color.text_primary'))
             .textAlign(TextAlign.Start)
+            .wordBreak(WordBreak.BREAK_ALL)
           }, (line: string) => line)
         }
       }, (b: MdBlock, bi: number) => `${bi}_${b.kind}_${b.lines.join(' ').substring(0, 20)}`)

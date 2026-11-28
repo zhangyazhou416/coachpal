@@ -130,6 +130,14 @@ export const DDL_STATEMENTS: string[] = [
     table_ TEXT NOT NULL PRIMARY KEY,
     last_pull TEXT NOT NULL
   )`,
+  // 教练对话历史（进程重启后恢复）
+  `CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    exercise_id TEXT,
+    created_at TEXT NOT NULL
+  )`,
 ];
 
 /** 每次开库兜底：档案行缺失则补（OR IGNORE 不覆盖已有数据）。 */

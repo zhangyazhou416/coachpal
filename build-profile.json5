@@ -7,11 +7,11 @@
         material: {
           certpath: 'C:\\Users\\zhangyazhou\\.ohos\\config\\default_coachpal_JJVwcGDvBsVc7oxlIs953nramqdnlsU7F3VVjHG1c=.cer',
           keyAlias: 'debugKey',
-          keyPassword: '0000001b16e86923ed0b047e7aabb76964d41551e07d0ba55e2eeb5464c104762f77149502b3b773ea3e5e',
+          keyPassword: '0000001b4f750861eeeb0cc288377b957b1e8047efa473675f2480fe645673d20c1e2d429a52aad104d75a',
           profile: 'C:\\Users\\zhangyazhou\\.ohos\\config\\default_coachpal_JJVwcGDvBsVc7oxlIs953nramqdnlsU7F3VVjHG1c=.p7b',
           signAlg: 'SHA256withECDSA',
           storeFile: 'C:\\Users\\zhangyazhou\\.ohos\\config\\default_coachpal_JJVwcGDvBsVc7oxlIs953nramqdnlsU7F3VVjHG1c=.p12',
-          storePassword: '0000001b16e86923ed0b047e7aabb76964d41551e07d0ba55e2eeb5464c104762f77149502b3b773ea3e5e',
+          storePassword: '0000001b4f750861eeeb0cc288377b957b1e8047efa473675f2480fe645673d20c1e2d429a52aad104d75a',
         },
       },
     ],

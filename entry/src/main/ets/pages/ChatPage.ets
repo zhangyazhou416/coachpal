@@ -183,6 +183,45 @@ export struct ChatPage {
     await AppServices.getInstance().whenReady();
     this.aiReady = await AppServices.getInstance().settings.isAiConfigured();
     this.checked = true;
+    await this.loadHistory();
+  }
+
+  /** 重启后恢复历史会话（欢迎卡置顶 + 最近消息）。 */
+  private async loadHistory(): Promise<void> {
+    const svc = AppServices.getInstance();
+    const store = svc.chatStore;
+    if (store === null) {
+      return;
+    }
+    try {
+      const stored = await store.recent(200);
+      if (stored.length === 0) {
+        return;
+      }
+      const out: ChatMsg[] = [];
+      for (const s of stored) {
+        let ex: ExerciseRow | null = null;
+        if (s.exerciseId !== null && svc.repo !== null) {
+          ex = await svc.repo.resolveExercise(s.exerciseId);
+        }
+        out.push(new ChatMsg(s.role, s.content, ex));
+      }
+      this.messages = [greeting()].concat(out);
+      this.scrollDown();
+    } catch (e) {
+      console.error('[CoachPal] load chat history failed: ' + (e as Error).message);
+    }
+  }
+
+  /** 消息落库（失败仅记日志，不影响会话）。 */
+  private persist(role: string, content: string, exerciseId: string | null): void {
+    const store = AppServices.getInstance().chatStore;
+    if (store === null) {
+      return;
+    }
+    store.append(role, content, exerciseId).catch((e: Error): void => {
+      console.error('[CoachPal] persist chat msg failed: ' + e.message);
+    });
   }
 
   private async recheck(): Promise<void> {
@@ -199,6 +238,7 @@ export struct ChatPage {
 
   private reply(msg: string, exercise: ExerciseRow | null): void {
     this.messages = this.messages.concat([new ChatMsg('assistant', msg, exercise)]);
+    this.persist('assistant', msg, exercise !== null ? exercise.id : null);
     this.sending = false;
     this.scrollDown();
   }
@@ -314,6 +354,7 @@ export struct ChatPage {
     }
     if (outcome.note !== null) {
       this.messages = this.messages.concat([new ChatMsg('note', outcome.note)]);
+      this.persist('note', outcome.note, null);
       this.scrollDown();
     }
     if (outcome.exercise !== null) {
@@ -493,6 +534,7 @@ export struct ChatPage {
       return;
     }
     this.messages = this.messages.concat([new ChatMsg('user', text)]);
+    this.persist('user', text, null);
     this.inputText = '';
     this.sending = true;
     this.pendingExercise = null;
@@ -533,10 +575,12 @@ export struct ChatPage {
       if (localExercise !== null) {
         if (!answered) {
           this.messages = this.messages.concat([new ChatMsg('note', msg)]);
+          this.persist('note', msg, null);
           this.reply(ExerciseSkill.summarize(localExercise), localExercise);
         } else {
           // 已给出动作卡片；模型补充回复失败仅作小字提示
           this.messages = this.messages.concat([new ChatMsg('note', msg)]);
+          this.persist('note', msg, null);
           this.scrollDown();
         }
       } else {
@@ -638,6 +682,7 @@ export struct ChatPage {
                 .fontSize(14)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(Color.White)
+                .wordBreak(WordBreak.BREAK_ALL)
                 .constraintSize({ maxWidth: '82%' })
                 .padding({ left: 14, right: 14, top: 10, bottom: 10 })
                 .backgroundColor($r('app.color.primary'))
